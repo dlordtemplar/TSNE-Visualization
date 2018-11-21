@@ -17,3 +17,5 @@ resources/
 out/
 *.iml
 *.idea
+
+htmlcov/
