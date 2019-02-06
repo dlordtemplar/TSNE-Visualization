@@ -12,6 +12,9 @@ Requirements.txt:
 - seaborn
 - spacy (You will need to get the English model: "python -m spacy download en")
 - tensorflow-gpu (NOT tensorflow. You need the GPU)
+- editdistance
+- whoosh
+- torch
 
 
 In the resources/embeddings folder, you need to extract the word vectors from here:
@@ -21,3 +24,5 @@ In the resources/embeddings folder, you need to extract the word vectors from he
 
 Current workflow:
 	Run preprocess.py, train.py, and then main.py.
+
+### Separation of Model from Webapp

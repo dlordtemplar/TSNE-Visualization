@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>Visualize Neurons</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="{{ url_for('static', filename = 'bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename = 'neuron.css') }}" rel="stylesheet">
+
+    <!-- Bootstrap core JavaScript -->
+    <script src="{{ url_for('static', filename = 'jquery/jquery.min.js') }}"></script>
+    <script src="{{ url_for('static', filename = 'bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+
+    <!-- Custom code -->
+    <script src="{{ url_for('static', filename = 'plotly-latest.min.js') }}"></script>
+    <script type="text/javascript">
+        function preloader() {
+            var indices = {{indices | safe}};
+            var pl_ca_heatmap_thumbs = {{pl_ca_heatmap_thumbs | safe}};
+            for (var i = 0; i < indices.length; i++) {
+                for (var idx = 0; idx < pl_ca_heatmap_thumbs[i].length; idx++) {
+                    var currentPlot = [pl_ca_heatmap_thumbs[i][idx]];
+                    produceChart(i, idx, currentPlot, 'ca_thumb');
+                    produceChart(i, idx, currentPlot, 'ca_modal');
+                }
+
+            }
+        }
+
+        window.onload = preloader;
+
+        function produceChart(index, answerNum, data, div_id_partial) {
+            Plotly.newPlot(div_id_partial + '_' + index + '_' + answerNum, data);
+        }
+    </script>
+</head>
+
+<body>
+
+<!-- Navigation -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark static-top">
+    <div class="container">
+        <a class="navbar-brand" href="#">Start Bootstrap</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive"
+                aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarResponsive">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item active">
+                    <a class="nav-link" href="#">Home
+                        <span class="sr-only">(current)</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">About</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Services</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Contact</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Page Content -->
+<div class="container-fluid">
+    <!-- Custom Content -->
+    <div class="row">
+        <div class="col-xs-12 col-md-6 col-xl-4">
+            <p>&lt;&lt;</p>
+        </div>
+        <div class="col-xl-4">
+            <h2 id="neuron-x">Neuron {{ neuron }}</h2>
+            <p>Number of QA pairs </p>
+            <hr>
+            <p>or input indices of QA pairs:</p>
+            <hr>
+            <p>Random Texts</p>
+            <p>
+                <small>Results on {{ indices|length }} QA pairs: {{ indices }}</small>
+            </p>
+        </div>
+        <div class="col-md-6 col-xl-4">
+            <blockquote>
+                <p>&gt;></p>
+            </blockquote>
+
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-6" id="texts_ca"><h2>Correct answers</h2>
+
+            {% for ca in highlighted_correct_answers %}
+                QA pair #{{ indices[loop.index0] }}
+                <br>
+                Question: {{ asked_questions[indices[loop.index0]] }}
+                <br>
+                <br>
+                <ol>
+                    {% for ca_instance in ca %}
+                        <li>{{ ca_instance|safe }}</li>
+                    {% endfor %}
+                </ol>
+                <hr class='w-100'>
+            {% endfor %}
+        </div>
+        {#        <div class="col-xs-12">#}
+        {#            <h2 id="correct-answers">Correct Answers</h2>#}
+        {#            <p>QA pair #0#}
+        {#                QUESTION: massage oil is there any place i can find scented massage oils in qatar?</p>#}
+        {#        </div>#}
+
+        <div class="col-sm-6" id="content_ca">
+
+            <br>
+            {% for i in indices %}
+                <br>Heatmaps for QA pair #{{ i }}
+                <div class="row">
+                    {#                    {% for idx in range(pl_ca_heatmap_thumbs[i]|length) %}#}
+                    {#                        <div class="col-sm-4" id="ca_thumb_{{ i }}_{{ idx }}">#}
+                    {#                        </div>#}
+                    {#                    {% endfor %}#}
+
+
+                    {% set outer_loop = loop %}
+                    {% for idx in range(correct_answers[outer_loop.index0]|length) %}
+                        <div class="col-lg-3 col-md-4 col-xs-6">
+                            {#                            <img class="img-fluid" data-toggle="modal" data-target="#modal_ca_{{ i }}_{{ idx }}" src='{{ url_for("static", filename="thumbnail_current_correct_neuron" + neuron|string + "_" + i|string + "_" +#}
+                            {#                            idx|string +".png") }}'#}
+                            {#                                 alt="A neuron activation heatmap for the correct answer #{{ idx }} for QA-pair #{{ i }}">#}
+
+                            <div data-toggle="modal" data-target="#modal_ca_{{ i }}_{{ idx }}"
+                                 id="ca_thumb_{{ i }}_{{ idx }}">
+                            </div>
+
+                            <!-- Modal -->
+                            <div class="modal fade" id="modal_ca_{{ i }}_{{ idx }}" tabindex="-1" role="dialog"
+                                 aria-labelledby="modal_ca_{{ i }}_{{ idx }}_title" aria-hidden="true">
+                                <div class="modal-dialog" role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="modal_ca_{{ i }}_{{ idx }}_title">
+                                                Neuron activation heatmap
+                                            </h5>
+                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                <span aria-hidden="true">&times;</span>
+                                            </button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>
+                                                The warm colors correspond to positive values, and the cold ones - to
+                                                negative.
+                                                <br>
+                                                The more intense the color, the higher the absolute value.
+                                            </p>
+                                            <p class="lead">
+                                                «{{ ' '.join(correct_answers[outer_loop.index0][idx]) }}»
+                                            </p>
+                                            {#                                            <img src='{{ url_for("static", filename="current_correct_neuron" + neuron|string + "_" + i|string + "_" + idx|string + ".png") }}'>#}
+                                            <div id="ca_modal_{{ i }}_{{ idx }}">
+                                            </div>
+                                        </div>
+                                        {#                                        <div class="modal-footer">#}
+                                        {#                                            {% if idx - 1 > 0 %}#}
+                                        {#                                                <a data-toggle="modal" data-dismiss="modal"#}
+                                        {#                                                   data-target="#modal_ca_{{ i }}_{{ idx-1 }}"#}
+                                        {#                                                   title='Previous heatmap'><i#}
+                                        {#                                                        class="fas fa-angle-double-left"></i></a>#}
+                                        {#                                            {% else %}#}
+                                        {#                                                <a data-toggle="modal" data-dismiss="modal"#}
+                                        {#                                                   data-target="#modal_ca_{{ i-1 }}_{{ correct_answers[i-1]|length - 1 }}"#}
+                                        {#                                                   title='Previous QA pair'><i#}
+                                        {#                                                        class="fas fa-angle-double-left"></i></a>#}
+                                        {#                                            {% endif %}#}
+                                        {#                                            {% if idx + 1 < correct_answers[i]|length %}#}
+                                        {#                                                <a data-toggle="modal" data-dismiss="modal"#}
+                                        {#                                                   data-target="#modal_ca_{{ i }}_{{ idx+1}}"#}
+                                        {#                                                   title='Next heatmap'><i#}
+                                        {#                                                        class="fas fa-angle-double-right"></i></a>#}
+                                        {#                                            {% else %}#}
+                                        {#                                                <a data-toggle="modal" data-dismiss="modal"#}
+                                        {#                                                   data-target="#modal_ca_{{ i+1}}_0"#}
+                                        {#                                                   title='Next QA pair'><i#}
+                                        {#                                                        class="fas fa-angle-double-right"></i></a>#}
+                                        {#                                            {% endif %}#}
+                                        {#                                            <button type="button" class="btn" data-dismiss="modal">Close</button>#}
+                                        {#                                        </div>#}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+            <!--            </div> -->
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-12">
+            <ol>
+                <li>yes it is right behind kahrama in the national area</li>
+            </ol>
+
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-3">
+            <p>Heatmap #1</p>
+
+        </div>
+        <div class="col-xs-3">
+            <p>Heatmap #2</p>
+
+        </div>
+        <div class="col-xs-3">
+            <p>Heatmap #3</p>
+
+        </div>
+        <div class="col-xs-3">
+            <p>Heatmap #4 and more rows as required</p>
+
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-12">
+            <h2 id="correct-answers-2-3-4-5">Correct Answers 2, 3, 4, 5</h2>
+
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-12">
+            <h2 id="wrong-answers">Wrong Answers</h2>
+            <p>QA pair #0
+                QUESTION: massage oil is there any place i can find scented massage oils in qatar?</p>
+
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-12">
+            <ol>
+                <li>whats the name of the shop</li>
+            </ol>
+            <p>Heatmaps go here, full-screen modals for close-up.</p>
+
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-12">
+            <h2 id="wrong-answers-2-3-4-5">Wrong Answers 2, 3, 4, 5</h2>
+
+        </div>
+    </div>
+</div>
+
+
+</body>
+</html>

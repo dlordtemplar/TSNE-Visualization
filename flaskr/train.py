@@ -202,18 +202,18 @@ q_vec = RepeatVector(200)(q_vec)
 
 a_vec = TimeDistributed(Dense(N_output, name='W_am'))(a_lstm_output)
 
-m = keras.layers.Add()([q_vec, a_vec])
+m = Add()([q_vec, a_vec])
 m = Activation(activation='tanh')(m)
 
 s = TimeDistributed(Dense(1, name='w_ms'))(m)
 s = keras.layers.Softmax(axis=1, name='attention_scores')(s)
 # name='attended_a'
-h_hat_a = keras.layers.Multiply()([a_lstm_output, s])
+h_hat_a = Multiply()([a_lstm_output, s])
 
 O_a = GlobalMaxPooling1D(name='max_pool_attended_a')(h_hat_a)
 # print("O_q[0:5]", O_q[0:5])
 # print("O_a[0:5]", O_a[0:5])
-x = keras.layers.dot([O_q, O_a], -1, normalize=True)
+x = Dot(axes=-1, normalize=True)([O_q, O_a])
 # x = Flatten()(x)
 
 model = Model([a_input, q_input], x)

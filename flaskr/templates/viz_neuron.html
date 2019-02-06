@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>DeepLee Model Inspection: LSTM's neurons' activation heatmaps</title>
+    <!-- JQuery -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <!-- Custom styles for this template -->
+    <link href="https://getbootstrap.com/docs/4.0/examples/starter-template/starter-template.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+            integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
+            crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+            integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+            crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.3/js/bootstrap.min.js"
+            integrity="sha384-a5N7Y/aK3qNeh15eJKGWxsqtnX/wWdSZSKp+81YjTmS15nvnvxKHuzaWwXHDli+4"
+            crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css"
+          integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
+    <script src="https://use.fontawesome.com/a06231d025.js"></script>
+    <script src="{{ url_for('static', filename = 'plotly-latest.min.js') }}"></script>
+    <!-- Custom styles for this template -->
+    <style>
+        .row-eq-height {
+            display: -webkit-box;
+            display: -webkit-flex;
+            display: -ms-flexbox;
+            display: flex;
+        }
+
+        body {
+            /* Margin bottom by footer height */
+            margin-bottom: 55px;
+        }
+
+        .footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background-color: #f5f5f5;
+            line-height: 45px;
+            height: 45px;
+        }
+
+        .top-buffer {
+            margin-top: 20px;
+        }
+
+        .row .no-float {
+            display: table-cell;
+            float: none;
+        }
+
+        .jumbotron p {
+            font-size: 14px !important;
+        }
+
+        .modal-dialog {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        .row {
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+            word-break: break-all;
+            word-break: break-word;
+            hyphens: auto;
+        }
+
+        .modal-content {
+            height: auto;
+            min-height: 100%;
+            border-radius: 0;
+        }
+
+        .column {
+            float: left;
+            width: 33.33%;
+        }
+
+        /* Clear floats after the columns */
+        .row:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+
+        /* Responsive layout - when the screen is less than 600px wide, make the three columns stack on top of each other instead of next to each other */
+        @media screen and (max-width: 600px) {
+            .column {
+                width: 100%;
+            }
+        }
+
+        .modal {
+            overflow: auto !important;
+        }
+
+        .modal-dialog {
+            margin: 0 auto !important;
+        }
+
+        @media screen and (min-width: 768px) {
+            .custom-class {
+                width: 80%;
+                /* either % (e.g. 60%) or px (400px) */
+                max-width: 80%;
+                /* either % (e.g. 60%) or px (400px) */
+            }
+        }
+
+        #loading_ca, #loading_wa, #loading_ca_texts, #loading_wa_texts {
+            display: none;
+            cursor: wait;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: url({{url_for('static', filename='spinner.gif')}}) no-repeat center center;
+        }
+
+        .card-text {
+            padding-left: 1rem;
+            padding-top: 1rem;
+            padding-right: 1rem;
+        }
+
+        /* overrides the max-width: 100% that you may have on all images */
+        .modal-body img {
+            max-width: auto;
+        }
+
+        .modal-body {
+            overflow: scroll;
+        }
+
+        div#content_page {
+            display: none;
+        }
+
+        div#loading_page {
+            margin: auto;
+            position: absolute;
+            z-index: 1000;
+            width: 100%;
+            height: 100%;
+            background: url({{url_for('static', filename='spinner.gif')}}) no-repeat center #fff;
+            cursor: wait;
+        }
+
+        .img-modal {
+            cursor: pointer;
+        }
+
+        .list-inline {
+            display: block;
+        }
+
+        .list-inline li {
+            display: inline-block;
+        }
+
+        .list-inline li:after {
+            content: '·';
+            margin: 0 10px;
+        }
+
+
+    </style>
+    <script type="text/javascript">
+        function loading() {
+            $("#loading_ca").show();
+            $("#content_ca").hide();
+            $("#loading_wa").show();
+            $("#content_wa").hide();
+        }
+
+        function loading_scale() {
+            $("#loading_wa_texts").show();
+            $("#texts_wa").hide();
+            $("#loading_ca_texts").show();
+            $("#texts_ca").hide();
+        }
+
+        function preloader() {
+            document.getElementById("loading_page").style.display = "none";
+
+            document.getElementById("content_page").style.display = "block";
+
+            var indices = {{indices | safe}};
+            var pl_ca_heatmap_thumbs = {{pl_ca_heatmap_thumbs | safe}};
+            for (var i = 0; i < indices.length; i++) {
+                for (var idx = 0; idx < pl_ca_heatmap_thumbs[i].length; idx++) {
+                    var currentPlot = [pl_ca_heatmap_thumbs[i][idx]];
+                    produceChart(i, idx, currentPlot, 'hm_thumb');
+                }
+
+            }
+        }
+
+        window.onload = preloader;
+
+        function produceChart(index, answerNum, data, div_id_partial) {
+            Plotly.newPlot(div_id_partial + '_' + index + '_' + answerNum, data);
+        }
+
+        // ]]>
+    </script>
+</head>
+
+<body>
+<div id="loading_page"></div>
+<header>
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-expand-md navbar-light fixed-top bg-light">
+        <a class="navbar-brand" href="#">Model inspection</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse"
+                aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/">Home</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="/qapair/">QA pairs</a>
+                </li>
+
+                <li class="nav-item active">
+                    <a class="nav-link" href="/neuron/">Neurons</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="/correlation/">Dependency</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+</header>
+
+<div>
+    <!--{{ pl_ca_heatmap_thumbs }}-->
+</div>
+
+<div id="sample_plotly_data">
+</div>
+
+<div class="container-fluid" id="content_page">
+
+    <div class="row">
+        <div class="col-sm-2 text-center">
+            {% if neuron - 1 >= 0 %}<h1><a href={{ url_for('viz.display_neuron', neuron=neuron - 1) }}
+                                                   onclick="loading();" title='Previous neuron'><i
+                    class="fas fa-angle-double-left"></i></a></h1>
+            {% endif %}
+        </div>
+        <div class="col-sm-8 text-center">
+
+            <h4>Neuron {{ neuron }}</h4>
+            <form method="POST">
+
+
+                <div class="form-check form-check-inline" data-toggle="tooltip" data-placement="top">
+
+                    <div class="col-sm-4">
+                        <label for="texts_number">Number of QA pairs </label>
+                        <input type="text" class="form-control" id="texts_number" name="texts_number"
+                               aria-describedby="texts_number" placeholder="Enter number of QA pairs. Default is 10.">
+                        <label for="texts_number">or input indices of QA pairs:</label>
+                        <input type="text" class="form-control" id="texts_indices" name="texts_indices"
+                               aria-describedby="texts_indices" placeholder="Enter indices of QA pairs: 0, 1, 2, ...">
+                        <input type="submit" value="Recalculate" class="btn btn-sm" onclick="loading();">
+
+                        <p>
+                            <small>Results on {{ indices|length }} QA pairs: {{ indices }}</small>
+                        </p>
+                    </div>
+                    <div class="col-sm-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="" id="random" name="random"
+                                   value="random" {% if session['random'] %}
+                                   checked {% endif %}>
+                            <label class="form-check-label" for="random">
+                                Random texts
+                            </label>
+                            <input type="submit" value="Generate" class="btn ml-2 btn-sm" onclick="loading();">
+                        </div>
+                    </div>
+                    <div class="col-sm-4">
+                        <div class="form-check">
+
+                            <input class="form-check-input" type="checkbox" value="" id="scale" name="scale"
+                                   value="scale" {% if session['scale'] %}
+                                   checked {% endif %}>
+                            <label class="form-check-label" for="random">
+                                Scale
+                            </label>
+                            <input type="submit" value="Recalculate" class="btn ml-2 btn-sm" onclick="loading();">
+
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="col-sm-2 text-center">
+            {% if neuron + 1 < neuron_num %}<h1><a href={{ url_for('viz.display_neuron', neuron=neuron + 1) }}
+                                                           onclick="loading();" title='Next neuron'><i
+                    class="fas fa-angle-double-right"></i></a></h1>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        <div id="loading_ca_texts"></div>
+        <div class="col-sm-6" id="texts_ca"><h4>Correct answers</h4>
+
+            {% for ca in highlighted_correct_answers %} QA pair #{{ indices[loop.index0] }} <br> QUESTION:
+                {{ asked_questions[indices[loop.index0]] }} <br><br>
+                <ol>{% for ca_instance in ca %}
+                    <li>{{ ca_instance|safe }}</li>
+                {% endfor %}
+                </ol>
+                <hr class='w-100'>
+            {% endfor %}
+        </div>
+
+        <div id="loading_ca"></div>
+        <div class="col-sm-6" id="content_ca">
+
+            <br>
+            {% for i in indices %}
+                <br>Heatmaps for QA pair #{{ i }}
+                <div class="row">
+                    {% for idx in range(pl_ca_heatmap_thumbs[i]|length) %}
+                        <div id="hm_thumb_{{ i }}_{{ idx }}" class="col-lg-3 col-md-4 col-xs-6">
+                        </div>
+                        <!--{{pl_ca_heatmap_thumbs[i][idx]}}-->
+
+
+
+                    {% endfor %}
+
+
+                    {% set outer_loop = loop %}
+                    {% for idx in range(correct_answers[outer_loop.index0]|length) %}
+                        <div class="col-lg-3 col-md-4 col-xs-6">
+                            <img class="img-fluid" data-toggle="modal" data-target="#modal_ca_{{ i }}_{{ idx }}" src='{{ url_for("static", filename="thumbnail_current_correct_neuron" + neuron|string + "_" + i|string + "_" +
+                            idx|string +".png") }}'
+                                 alt="A neuron activation heatmap for the correct answer #{{ idx }} for QA-pair #{{ i }}">
+
+                            <!-- Modal -->
+                            <div class="modal fade" id="modal_ca_{{ i }}_{{ idx }}" tabindex="-1" role="dialog"
+                                 aria-labelledby="modal_ca_{{ i }}_{{ idx }}_title" aria-hidden="true">
+                                <div class="modal-dialog custom-class" role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="modal_ca_{{ i }}_{{ idx }}_title">Neuron
+                                                Activation
+                                                Heatmap</h5>
+                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                <span aria-hidden="true">&times;</span>
+                                            </button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>The warm colors correspond to positive values, and the cold ones - to
+                                                negative.<br> The more intense the color, the higher the absolute value.
+                                            </p>
+                                            <p class="lead">
+                                                «{{ ' '.join(correct_answers[outer_loop.index0][idx]) }}»</p>
+                                            <img src='{{ url_for("static", filename="current_correct_neuron" + neuron|string + "_" + i|string + "_" + idx|string + ".png") }}'>
+
+                                        </div>
+                                        <div class="modal-footer">
+                                            {% if idx - 1 > 0 %}
+                                                <a data-toggle="modal" data-dismiss="modal"
+                                                   data-target="#modal_ca_{{ i }}_{{ idx-1 }}"
+                                                   title='Previous heatmap'><i
+                                                        class="fas fa-angle-double-left"></i></a>
+                                            {% else %}
+                                                <a data-toggle="modal" data-dismiss="modal"
+                                                   data-target="#modal_ca_{{ i-1 }}_{{ correct_answers[i-1]|length - 1 }}"
+                                                   title='Previous QA pair'><i
+                                                        class="fas fa-angle-double-left"></i></a>
+                                            {% endif %}
+                                            {% if idx + 1 < correct_answers[i]|length %}
+                                                <a data-toggle="modal" data-dismiss="modal"
+                                                   data-target="#modal_ca_{{ i }}_{{ idx+1}}"
+                                                   title='Next heatmap'><i
+                                                        class="fas fa-angle-double-right"></i></a>
+                                            {% else %}
+                                                <a data-toggle="modal" data-dismiss="modal"
+                                                   data-target="#modal_ca_{{ i+1}}_0"
+                                                   title='Next QA pair'><i
+                                                        class="fas fa-angle-double-right"></i></a>
+                                            {% endif %}
+                                            <button type="button" class="btn" data-dismiss="modal">Close</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+            <!--            </div> -->
+        </div>
+    </div>
+
+    <div class="row">
+        <div id="loading_wa_texts"></div>
+        <div class="col-sm-6" id="texts_wa"><h4>Wrong answers</h4>
+            {% for wa in highlighted_wrong_answers %} QA pair #{{ indices[loop.index0] }} <br> QUESTION:
+                {{ asked_questions[indices[loop.index0]] }} <br><br>
+                <ol> {% for wa_instance in wa %}
+                    <li>{{ wa_instance|safe }}</li>
+                {% endfor %}
+                </ol>
+                <hr class='w-100'>
+            {% endfor %}
+        </div>
+
+        <div id="loading_wa"></div>
+        <div class="col-sm-6" id="content_wa">
+
+            {% for i in indices %}
+                Heatmaps for QA pair #{{ i }}
+                <div class="row">
+                    {% set outer_loop = loop %}
+                    {% for idx in range(wrong_answers[outer_loop.index0]|length) %}
+                        <div class="col-lg-3 col-md-4 col-xs-6">
+                            <img class="img-fluid img-modal" data-toggle="modal"
+                                 data-target="#modal_wa_{{ i }}_{{ idx }}" src="{{ url_for('static', filename='thumbnail_current_wrong_neuron' + neuron|string + '_' + i|string + '_' +
+                            idx|string +'.png') }}"
+                                 alt='A neuron activation heatmap for the wrong answer #{{ idx }} for QA-pair #{{ i }}'>
+
+                            <!-- Modal -->
+                            <div class="modal fade" id="modal_wa_{{ i }}_{{ idx }}" tabindex="-1" role="dialog"
+                                 aria-labelledby="modal_wa_{{ i }}_{{ idx }}_title" aria-hidden="true">
+                                <div class="modal-dialog custom-class" role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="modal_wa_{{ i }}_{{ idx }}_title">Neuron
+                                                Activation
+                                                Hatmap</h5>
+                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                <span aria-hidden="true">&times;</span>
+                                            </button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>The warm colors correspond to positive values, and the cold ones - to
+                                                negative.<br> The more intense the color, the higher the absolute value.
+                                            </p>
+                                            <p class="lead">«{{ wrong_answers[outer_loop.index0][idx] }}»</p>
+                                            <img src='{{ url_for("static", filename="current_wrong_neuron" + neuron|string + "_" + i|string + "_" + idx|string + ".png") }}'>
+
+                                        </div>
+                                        <div class="modal-footer">
+                                            {% if idx - 1 >= 0 %}
+                                                <a data-toggle="modal" data-dismiss="modal"
+                                                   data-target="#modal_wa_{{ i }}_{{ idx-1 }}"
+                                                   title='Previous heatmap'><i
+                                                        class="fas fa-angle-double-left"></i></a>
+                                            {% else %}
+                                                <a data-toggle="modal" data-dismiss="modal"
+                                                   data-target="#modal_wa_{{ i-1 }}_{{ wrong_answers[i-1]|length - 1 }}"
+                                                   title='Previous QA pair'><i
+                                                        class="fas fa-angle-double-left"></i></a>
+                                            {% endif %}
+                                            {% if idx + 1 < wrong_answers[i]|length %}
+                                                <a data-toggle="modal" data-dismiss="modal"
+                                                   data-target="#modal_wa_{{ i }}_{{ idx+1}}"
+                                                   title='Next heatmap'><i
+                                                        class="fas fa-angle-double-right"></i></a>
+                                            {% else %}
+                                                <a data-toggle="modal" data-dismiss="modal"
+                                                   data-target="#modal_wa_{{ i+1}}_0"
+                                                   title='Next QA pair'><i
+                                                        class="fas fa-angle-double-right"></i></a>
+                                            {% endif %}
+                                            <button type="button" class="btn" data-dismiss="modal">Close</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+
+    <div class="mt-5 row">
+        <div class="col-sm-2"></div>
+        <div class="col-sm-8"><p class="font-weight-bold">Most activated words:</p>
+            <ul class="list-inline">
+                {% for x in activated_words %}
+                    <li> {{ x }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="col-sm-2"></div>
+    </div>
+    <div class="row">
+        <div class="col-sm-2"></div>
+        <div class="col-sm-8"><p class="font-weight-bold">Most anti-activated words:</p>
+            <ul class="list-inline">
+                {% for x in antiactivated_words %}
+                    <li> {{ x }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="col-sm-2"></div>
+    </div>
+</div>
+
+
+<footer class="footer text-center">
+    <small class="text-muted">&copy; 2018 DFKI. <a href="https://www.dfki.de/web/data-protection-de" target="_blank">Data
+        Protection</a>. Powered with sklearn, Flask and Keras (Tensorflow).
+    </small>
+</footer>
+
+</body>
+
+</html>
