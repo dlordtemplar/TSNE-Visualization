@@ -20,14 +20,48 @@
     <!-- Custom code -->
     <script src="{{ url_for('static', filename = 'plotly-latest.min.js') }}"></script>
     <script type="text/javascript">
+        // plot.ly doesn't support duplicate axis labels currently, but we need them to make charts more legible.
+        // https://github.com/plotly/plotly.js/issues/1516
+        // ticktext/tickvals method didn't work, so this method is used to create fake unique words
+        // A side effect of this is that hover text now needs to be stripped of this whitespace.
+        function createFakeUniqueWords(word_array) {
+            var fakeUniqueWords = Array(word_array.length)
+            var usedWords = {};
+            for (var q = 0; q < word_array.length; q++) {
+                if (word_array[q] in usedWords) {
+                    var fakeWord = word_array[q];
+                    for (var k = 0; k < usedWords[word_array[q]]; k++) {
+                        // "Unique" words just prefix the word with spaces
+                        fakeWord = ' ' + fakeWord;
+                    }
+                    fakeUniqueWords[q] = fakeWord;
+                    usedWords[word_array[q]] += 1;
+                } else {
+                    fakeUniqueWords[q] = word_array[q];
+                    usedWords[word_array[q]] = 1;
+                }
+            }
+            return fakeUniqueWords
+        }
+
         function preloader() {
             var indices = {{indices | safe}};
             var pl_ca_heatmap_thumbs = {{pl_ca_heatmap_thumbs | safe}};
             for (var i = 0; i < indices.length; i++) {
                 for (var idx = 0; idx < pl_ca_heatmap_thumbs[i].length; idx++) {
                     var currentPlot = [pl_ca_heatmap_thumbs[i][idx]];
-                    produceChart(i, idx, currentPlot, 'ca_thumb');
-                    produceChart(i, idx, currentPlot, 'ca_modal');
+                    var words = currentPlot[0].y;
+                    currentPlot[0].text = words;
+
+                    // Replace duplicate words with "unique" versions
+                    currentPlot[0].y = createFakeUniqueWords(words);
+
+                    var layout = {};
+                    drawChart(i, idx, currentPlot, 'ca_thumb', layout);
+                    if (words.length > 10) {
+                        layout.height = 700 + words.length * 10;
+                    }
+                    drawChart(i, idx, currentPlot, 'ca_modal', layout);
                 }
 
             }
@@ -35,8 +69,8 @@
 
         window.onload = preloader;
 
-        function produceChart(index, answerNum, data, div_id_partial) {
-            Plotly.newPlot(div_id_partial + '_' + index + '_' + answerNum, data);
+        function drawChart(index, answerNum, data, div_id_partial, layout) {
+            Plotly.newPlot(div_id_partial + '_' + index + '_' + answerNum, data, layout);
         }
     </script>
 </head>
