@@ -22,7 +22,7 @@
     <script type="text/javascript">
         // plot.ly doesn't support duplicate axis labels currently, but we need them to make charts more legible.
         // https://github.com/plotly/plotly.js/issues/1516
-        // ticktext/tickvals method didn't work, so this method is used to create fake unique words
+        // ticktext/tickvals method didn't work when I tried, so this method is used to create fake unique words.
         // A side effect of this is that hover text now needs to be stripped of this whitespace.
         function createFakeUniqueWords(word_array) {
             var fakeUniqueWords = Array(word_array.length)
@@ -49,6 +49,7 @@
             var pl_ca_heatmap_thumbs = {{pl_ca_heatmap_thumbs | safe}};
             for (var i = 0; i < indices.length; i++) {
                 for (var idx = 0; idx < pl_ca_heatmap_thumbs[i].length; idx++) {
+                    // Plotly wants this value wrapped in an array
                     var currentPlot = [pl_ca_heatmap_thumbs[i][idx]];
                     var words = currentPlot[0].y;
                     currentPlot[0].text = words;
@@ -57,11 +58,23 @@
                     currentPlot[0].y = createFakeUniqueWords(words);
 
                     var layout = {};
-                    drawChart(i, idx, currentPlot, 'ca_thumb', layout);
+
+                    // Draw thumbnail as a static chart
+                    drawChart(i, idx, currentPlot, 'ca_thumb', layout, true);
+
+                    // TODO: Strip fakeUniqueWord values from workaround in hover tooltip
+                    // Hiding "x" values from tooltip here as they are all 0.
+                    // This method below did not work for me.
+                    // https://stackoverflow.com/questions/41128318/is-it-possible-to-change-text-in-hover-tool-tip-for-plotlyjs-bubble-chart
+                    currentPlot[0].hoverinfo = 'y+z';
+
+                    // Increase chart height for long sentences
                     if (words.length > 10) {
                         layout.height = 700 + words.length * 10;
                     }
-                    drawChart(i, idx, currentPlot, 'ca_modal', layout);
+
+                    // Draw modal chart as a fully functional chart
+                    drawChart(i, idx, currentPlot, 'ca_modal', layout, false);
                 }
 
             }
@@ -69,8 +82,8 @@
 
         window.onload = preloader;
 
-        function drawChart(index, answerNum, data, div_id_partial, layout) {
-            Plotly.newPlot(div_id_partial + '_' + index + '_' + answerNum, data, layout);
+        function drawChart(index, answerNum, data, div_id_partial, layout, isStatic) {
+            Plotly.newPlot(div_id_partial + '_' + index + '_' + answerNum, data, layout, {staticPlot: isStatic});
         }
     </script>
 </head>
@@ -148,11 +161,6 @@
                 <hr class='w-100'>
             {% endfor %}
         </div>
-        {#        <div class="col-xs-12">#}
-        {#            <h2 id="correct-answers">Correct Answers</h2>#}
-        {#            <p>QA pair #0#}
-        {#                QUESTION: massage oil is there any place i can find scented massage oils in qatar?</p>#}
-        {#        </div>#}
 
         <div class="col-sm-6" id="content_ca">
 
@@ -160,20 +168,10 @@
             {% for i in indices %}
                 <br>Heatmaps for QA pair #{{ i }}
                 <div class="row">
-                    {#                    {% for idx in range(pl_ca_heatmap_thumbs[i]|length) %}#}
-                    {#                        <div class="col-sm-4" id="ca_thumb_{{ i }}_{{ idx }}">#}
-                    {#                        </div>#}
-                    {#                    {% endfor %}#}
-
-
                     {% set outer_loop = loop %}
                     {% for idx in range(correct_answers[outer_loop.index0]|length) %}
                         <div class="col-lg-3 col-md-4 col-xs-6">
-                            {#                            <img class="img-fluid" data-toggle="modal" data-target="#modal_ca_{{ i }}_{{ idx }}" src='{{ url_for("static", filename="thumbnail_current_correct_neuron" + neuron|string + "_" + i|string + "_" +#}
-                            {#                            idx|string +".png") }}'#}
-                            {#                                 alt="A neuron activation heatmap for the correct answer #{{ idx }} for QA-pair #{{ i }}">#}
-
-                            <div data-toggle="modal" data-target="#modal_ca_{{ i }}_{{ idx }}"
+                            <div data-toggle="modal" data-target="#modal_ca_{{ i }}_{{ idx }}" class="pl_chart"
                                  id="ca_thumb_{{ i }}_{{ idx }}">
                             </div>
 
@@ -201,7 +199,7 @@
                                                 «{{ ' '.join(correct_answers[outer_loop.index0][idx]) }}»
                                             </p>
                                             {#                                            <img src='{{ url_for("static", filename="current_correct_neuron" + neuron|string + "_" + i|string + "_" + idx|string + ".png") }}'>#}
-                                            <div id="ca_modal_{{ i }}_{{ idx }}">
+                                            <div class="pl_chart" id="ca_modal_{{ i }}_{{ idx }}">
                                             </div>
                                         </div>
                                         {#                                        <div class="modal-footer">#}
