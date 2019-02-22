@@ -86,6 +86,7 @@
             Plotly.newPlot(div_id_partial + '_' + index + '_' + answerNum, data, layout, {staticPlot: isStatic});
         }
     </script>
+    <!-- END Custom code -->
 </head>
 
 <body>
@@ -145,33 +146,35 @@
         </div>
     </div>
     <div class="row">
-        <div class="col-sm-6" id="texts_ca"><h2>Correct answers</h2>
-
-            {% for ca in highlighted_correct_answers %}
-                QA pair #{{ indices[loop.index0] }}
-                <br>
-                Question: {{ asked_questions[indices[loop.index0]] }}
-                <br>
-                <br>
-                <ol>
-                    {% for ca_instance in ca %}
-                        <li>{{ ca_instance|safe }}</li>
-                    {% endfor %}
-                </ol>
-                <hr class='w-100'>
-            {% endfor %}
+        <div class="col" id="texts_ca"><h2>Correct answers</h2>
         </div>
+    </div>
 
-        <div class="col-sm-6" id="content_ca">
+    <!-- Template start -->
+    <div class="row">
+        <div class="col" id="content_ca">
 
             <br>
             {% for i in indices %}
+                {% for highlighted_correct_answers in indexed_highlighted_correct_answers[i] %}
+                    QA pair #{{ i }}
+                    <br>
+                    Question: {{ asked_questions[i] }}
+                    <br>
+                    <br>
+                    <ol>
+                        {% for highlighted_correct_answer in highlighted_correct_answers %}
+                            <li>{{ highlighted_correct_answer|safe }}</li>
+                        {% endfor %}
+                    </ol>
+                {% endfor %}
+
                 <br>Heatmaps for QA pair #{{ i }}
                 <div class="row">
-                    {% set outer_loop = loop %}
-                    {% for idx in range(correct_answers[outer_loop.index0]|length) %}
-                        <div class="col-lg-3 col-md-4 col-xs-6">
-                            <div data-toggle="modal" data-target="#modal_ca_{{ i }}_{{ idx }}" class="pl_chart"
+                    {% for idx in range(indexed_correct_answers[i]|length) %}
+                        <div class="col-lg-2 col-md-3 col-xs-4">
+                            <div data-toggle="modal" data-target="#modal_ca_{{ i }}_{{ idx }}"
+                                 class="pl_chart chart_thumb"
                                  id="ca_thumb_{{ i }}_{{ idx }}">
                             </div>
 
@@ -190,82 +193,35 @@
                                         </div>
                                         <div class="modal-body">
                                             <p>
-                                                The warm colors correspond to positive values, and the cold ones - to
-                                                negative.
+                                                The warm colors correspond to positive values, and the cold ones to
+                                                negative values.
                                                 <br>
                                                 The more intense the color, the higher the absolute value.
                                             </p>
+                                            <br/>
                                             <p class="lead">
-                                                «{{ ' '.join(correct_answers[outer_loop.index0][idx]) }}»
+                                                {{ ' '.join(indexed_correct_answers[i][idx]) }}
                                             </p>
-                                            {#                                            <img src='{{ url_for("static", filename="current_correct_neuron" + neuron|string + "_" + i|string + "_" + idx|string + ".png") }}'>#}
                                             <div class="pl_chart" id="ca_modal_{{ i }}_{{ idx }}">
                                             </div>
                                         </div>
-                                        {#                                        <div class="modal-footer">#}
-                                        {#                                            {% if idx - 1 > 0 %}#}
-                                        {#                                                <a data-toggle="modal" data-dismiss="modal"#}
-                                        {#                                                   data-target="#modal_ca_{{ i }}_{{ idx-1 }}"#}
-                                        {#                                                   title='Previous heatmap'><i#}
-                                        {#                                                        class="fas fa-angle-double-left"></i></a>#}
-                                        {#                                            {% else %}#}
-                                        {#                                                <a data-toggle="modal" data-dismiss="modal"#}
-                                        {#                                                   data-target="#modal_ca_{{ i-1 }}_{{ correct_answers[i-1]|length - 1 }}"#}
-                                        {#                                                   title='Previous QA pair'><i#}
-                                        {#                                                        class="fas fa-angle-double-left"></i></a>#}
-                                        {#                                            {% endif %}#}
-                                        {#                                            {% if idx + 1 < correct_answers[i]|length %}#}
-                                        {#                                                <a data-toggle="modal" data-dismiss="modal"#}
-                                        {#                                                   data-target="#modal_ca_{{ i }}_{{ idx+1}}"#}
-                                        {#                                                   title='Next heatmap'><i#}
-                                        {#                                                        class="fas fa-angle-double-right"></i></a>#}
-                                        {#                                            {% else %}#}
-                                        {#                                                <a data-toggle="modal" data-dismiss="modal"#}
-                                        {#                                                   data-target="#modal_ca_{{ i+1}}_0"#}
-                                        {#                                                   title='Next QA pair'><i#}
-                                        {#                                                        class="fas fa-angle-double-right"></i></a>#}
-                                        {#                                            {% endif %}#}
-                                        {#                                            <button type="button" class="btn" data-dismiss="modal">Close</button>#}
-                                        {#                                        </div>#}
                                     </div>
                                 </div>
                             </div>
                         </div>
                     {% endfor %}
                 </div>
+                <hr class='w-100'>
             {% endfor %}
-            <!--            </div> -->
         </div>
     </div>
+    <!-- Template end -->
+
     <div class="row">
         <div class="col-xs-12">
             <ol>
                 <li>yes it is right behind kahrama in the national area</li>
             </ol>
-
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-xs-3">
-            <p>Heatmap #1</p>
-
-        </div>
-        <div class="col-xs-3">
-            <p>Heatmap #2</p>
-
-        </div>
-        <div class="col-xs-3">
-            <p>Heatmap #3</p>
-
-        </div>
-        <div class="col-xs-3">
-            <p>Heatmap #4 and more rows as required</p>
-
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-xs-12">
-            <h2 id="correct-answers-2-3-4-5">Correct Answers 2, 3, 4, 5</h2>
 
         </div>
     </div>
@@ -292,6 +248,7 @@
 
         </div>
     </div>
+    <!-- END Custom Content -->
 </div>
 
 

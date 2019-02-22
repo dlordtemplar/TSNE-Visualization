@@ -262,6 +262,8 @@ def display_neuron(neuron):
 
     # PLOTLY
     pl_ca_heatmap_thumbs = {}
+    indexed_correct_answers = {}
+    indexed_highlighted_correct_answers = {}
 
     for i in session['indices']:
         print('Generating activations for QA pair', i)
@@ -285,8 +287,19 @@ def display_neuron(neuron):
                                                            session['scale'],
                                                            neuron)
             all_highlighted_correct_answers.append(highlighted_correct_answers)
+
+            if i not in indexed_highlighted_correct_answers:
+                indexed_highlighted_correct_answers[i] = [highlighted_correct_answers]
+            else:
+                indexed_highlighted_correct_answers[i].append(highlighted_correct_answers)
+
             all_correct_answers.append(
                 [np.array([vocabulary_inv[x] for x in ca_tokens[idx]]) for idx in range(len(ca_tokens))])
+            current_ca = [[vocabulary_inv[x] for x in ca_tokens[idx]] for idx in range(len(ca_tokens))]
+            if i not in indexed_correct_answers:
+                indexed_correct_answers[i] = current_ca
+            else:
+                indexed_correct_answers[i].append(current_ca)
 
             activation_per_word_data['ca_firings' + str(i)] = rnn_values_ca[:, :, neuron].flatten()
             activation_per_word_data['ca_text' + str(i)] = [
@@ -295,7 +308,19 @@ def display_neuron(neuron):
                 in x]
         else:
             all_highlighted_correct_answers.append([])
+
+            if i not in indexed_highlighted_correct_answers:
+                indexed_highlighted_correct_answers[i] = []
+            else:
+                indexed_highlighted_correct_answers[i].append([])
+
             all_correct_answers.append([])
+
+            if i not in indexed_correct_answers:
+                indexed_correct_answers[i] = []
+            else:
+                indexed_correct_answers[i].append([])
+
             activation_per_word_data['ca_text' + str(i)] = []
             activation_per_word_data['ca_firings' + str(i)] = []
 
@@ -416,7 +441,7 @@ def display_neuron(neuron):
                     heatmap_points = {'z': rnn_values_ca[idx, -len(ca_tokens[idx]):, neuron:neuron + 1].tolist(),
                                       'y': words,
                                       'type': 'heatmap'}
-                    print(pl_ca_heatmap_thumbs)
+                    # print('pl_ca_heatmap_thumbs', pl_ca_heatmap_thumbs)
                     if i in pl_ca_heatmap_thumbs:
                         pl_ca_heatmap_thumbs[i].append(heatmap_points)
                     else:
@@ -522,7 +547,6 @@ def display_neuron(neuron):
     all_tokens = np.array(all_tokens)
     p_high = np.percentile([x for i, x in enumerate(all_firings) if all_tokens[i] != '<pad>'], 90)
     p_low = np.percentile([x for i, x in enumerate(all_firings) if all_tokens[i] != '<pad>'], 10)
-    print(p_high)
 
     for ind, x in enumerate(all_firings):
         if x >= p_high:
@@ -534,18 +558,14 @@ def display_neuron(neuron):
 
     seen = set()
     activated_words = [x for x in activated_words if not (x in seen or seen.add(x))]
-    print(activated_words)
     seen = set()
     antiactivated_words = [x for x in antiactivated_words if not (x in seen or seen.add(x))]
     asked_questions = qa_pairs['question']
 
-    sample_plotly_data = [{
-        'z': [[1, 20, 30], [20, 1, 60], [30, 60, 1]],
-        'type': 'heatmap'
-    }]
-    # py.iplot(data, filename='basic-heatmap')
-
     # return render_template('viz_neuron.html', wrong_answers=all_wrong_answers,
+
+    print('indexed_correct_answers', indexed_correct_answers)
+    # print('indexed_highlighted_correct_answers', indexed_highlighted_correct_answers)
     return render_template('index.html', wrong_answers=all_wrong_answers,
                            correct_answers=all_correct_answers,
                            highlighted_correct_answers=all_highlighted_correct_answers,
@@ -556,7 +576,8 @@ def display_neuron(neuron):
                            asked_questions=asked_questions,
                            # plotly
                            pl_ca_heatmap_thumbs=pl_ca_heatmap_thumbs,
-                           sample_plotly_data=sample_plotly_data
+                           indexed_correct_answers=indexed_correct_answers,
+                           indexed_highlighted_correct_answers=indexed_highlighted_correct_answers
                            )
 
 
