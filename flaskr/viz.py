@@ -4,8 +4,6 @@ import random
 from threading import Lock
 
 # plotting settings
-import matplotlib
-import matplotlib.pyplot as plt
 import seaborn as sns
 import tensorflow as tf
 from flask import (
@@ -19,7 +17,6 @@ from flaskr.db import get_db
 from loading_preprocessing_TC import *
 
 sns.set()
-matplotlib.style.use('ggplot')
 
 bp = Blueprint('viz', __name__)
 MODEL_DIR = 'out/data/semeval/models'
@@ -93,10 +90,6 @@ def load_environment():
     global qa_pairs, answer_texts
     print("Loading keras visualization setup")
 
-    # storage = FileStorage('../out/whoosh/indexdir_semeval')
-    # ix = storage.open_index()
-
-    print('os.getcwd()', os.getcwd())
     with open('flaskr/tokenizer.p', 'rb') as handle:
         tokenizer = pickle.load(handle)
     with open('flaskr/embedding_matrix.p', 'rb') as handle:
@@ -159,8 +152,8 @@ def load_data():
     return train, answer_texts_train
 
 
-@bp.route('/viz/neuron', defaults={'neuron': 0}, strict_slashes=False, methods=['GET', 'POST'])
-@bp.route('/viz/neuron/<int:neuron>', strict_slashes=False, methods=['GET', 'POST'])
+@bp.route('/neuron', defaults={'neuron': 0}, strict_slashes=False, methods=['GET', 'POST'])
+@bp.route('/neuron/<int:neuron>', strict_slashes=False, methods=['GET', 'POST'])
 def display_neuron(neuron):
     global answer_texts, qa_pairs, vocabulary_inv, model
     print('after loading: ', model)
@@ -245,7 +238,7 @@ def display_neuron(neuron):
     all_highlighted_wrong_answers = []
     all_wrong_answers = []
 
-    print(session['indices'])
+    print('indices', session['indices'])
     min_ca = 1
     min_wa = 1
     max_ca = -1
@@ -258,7 +251,7 @@ def display_neuron(neuron):
 
     activation_per_word_data = {}
 
-    # PLOTLY
+    # plotly
     pl_ca_heatmap_points = {}
     pl_wa_heatmap_points = {}
     indexed_correct_answers = {}
@@ -364,13 +357,10 @@ def display_neuron(neuron):
             activation_per_word_data['wa_text' + str(i)] = []
             activation_per_word_data['wa_firings' + str(i)] = []
 
-        # Image generation for correct answers
+        # Point generation for correct answers
         if parameter_changed or request.method == 'GET':
-            print('Generating Correct Answer points...')
             if len(correct_answers) > 0:
                 for idx in range(0, len(ca_tokens)):
-                    print('\tCorrect Answer', idx)
-                    # PLOTLY
                     words = [vocabulary_inv[x] for x in ca_tokens[idx]]
                     heatmap_points = {'z': rnn_values_ca[idx, -len(ca_tokens[idx]):, neuron:neuron + 1].tolist(),
                                       'y': words,
@@ -383,7 +373,6 @@ def display_neuron(neuron):
             # Same as above, but for wrong answers
             if len(wrong_answers) > 0:
                 for idx in range(0, len(wa_tokens)):
-                    print('\tWrong Answer', idx)
                     words = [vocabulary_inv[x] for x in wa_tokens[idx]]
                     heatmap_points = {'z': rnn_values_wa[idx, -len(wa_tokens[idx]):, neuron:neuron + 1].tolist(),
                                       'y': words,
@@ -428,8 +417,7 @@ def display_neuron(neuron):
     antiactivated_words = [x for x in antiactivated_words if not (x in seen or seen.add(x))]
     asked_questions = qa_pairs['question']
 
-    # return render_template('viz_neuron.html', wrong_answers=all_wrong_answers,
-    return render_template('index.html',
+    return render_template('viz_neuron.html',
                            neuron=neuron,
                            neuron_num=neuron_num, random=session['random'], indices=session['indices'],
                            scale=session['scale'], activated_words=activated_words,
