@@ -242,8 +242,6 @@ def display_neuron(neuron):
             session['indices'] = list(range(0, session['num_texts']))
 
     # Start actual visualization
-    all_highlighted_correct_answers = []
-    all_correct_answers = []
     all_highlighted_wrong_answers = []
     all_wrong_answers = []
 
@@ -261,9 +259,12 @@ def display_neuron(neuron):
     activation_per_word_data = {}
 
     # PLOTLY
-    pl_ca_heatmap_thumbs = {}
+    pl_ca_heatmap_points = {}
+    pl_wa_heatmap_points = {}
     indexed_correct_answers = {}
     indexed_highlighted_correct_answers = {}
+    indexed_wrong_answers = {}
+    indexed_highlighted_wrong_answers = {}
 
     for i in session['indices']:
         print('Generating activations for QA pair', i)
@@ -286,15 +287,12 @@ def display_neuron(neuron):
             highlighted_correct_answers = highlight_neuron(rnn_values_ca, correct_answers, ca_tokens,
                                                            session['scale'],
                                                            neuron)
-            all_highlighted_correct_answers.append(highlighted_correct_answers)
 
             if i not in indexed_highlighted_correct_answers:
                 indexed_highlighted_correct_answers[i] = [highlighted_correct_answers]
             else:
                 indexed_highlighted_correct_answers[i].append(highlighted_correct_answers)
 
-            all_correct_answers.append(
-                [np.array([vocabulary_inv[x] for x in ca_tokens[idx]]) for idx in range(len(ca_tokens))])
             current_ca = [[vocabulary_inv[x] for x in ca_tokens[idx]] for idx in range(len(ca_tokens))]
             if i not in indexed_correct_answers:
                 indexed_correct_answers[i] = current_ca
@@ -307,14 +305,10 @@ def display_neuron(neuron):
                 token
                 in x]
         else:
-            all_highlighted_correct_answers.append([])
-
             if i not in indexed_highlighted_correct_answers:
                 indexed_highlighted_correct_answers[i] = []
             else:
                 indexed_highlighted_correct_answers[i].append([])
-
-            all_correct_answers.append([])
 
             if i not in indexed_correct_answers:
                 indexed_correct_answers[i] = []
@@ -335,8 +329,18 @@ def display_neuron(neuron):
             highlighted_wrong_answers = highlight_neuron(rnn_values_wa, wrong_answers, wa_tokens, session['scale'],
                                                          neuron)
             all_highlighted_wrong_answers.append(highlighted_wrong_answers)
-            all_wrong_answers.append(
-                [np.array([vocabulary_inv[x] for x in wa_tokens[idx]]) for idx in range(len(wa_tokens))])
+
+            if i not in indexed_highlighted_wrong_answers:
+                indexed_highlighted_wrong_answers[i] = [highlighted_wrong_answers]
+            else:
+                indexed_highlighted_wrong_answers[i].append(highlighted_wrong_answers)
+
+            current_wa = [np.array([vocabulary_inv[x] for x in wa_tokens[idx]]) for idx in range(len(wa_tokens))]
+            if i not in indexed_wrong_answers:
+                indexed_wrong_answers[i] = current_wa
+            else:
+                indexed_wrong_answers[i].append(current_wa)
+
             activation_per_word_data['wa_firings' + str(i)] = rnn_values_wa[:, :, neuron].flatten()
             activation_per_word_data['wa_text' + str(i)] = [
                 vocabulary_inv[token] if token in vocabulary_inv.keys() else '<pad>' for x in wa_padded_tokens for
@@ -344,188 +348,50 @@ def display_neuron(neuron):
                 in x]
         else:
             all_highlighted_wrong_answers.append([])
+
+            if i not in indexed_highlighted_wrong_answers:
+                indexed_highlighted_wrong_answers[i] = []
+            else:
+                indexed_highlighted_wrong_answers[i].append([])
+
             all_wrong_answers.append([])
+
+            if i not in indexed_wrong_answers:
+                indexed_wrong_answers[i] = []
+            else:
+                indexed_wrong_answers[i].append([])
+
             activation_per_word_data['wa_text' + str(i)] = []
             activation_per_word_data['wa_firings' + str(i)] = []
 
         # Image generation for correct answers
         if parameter_changed or request.method == 'GET':
-            print('Generating images')
+            print('Generating Correct Answer points...')
             if len(correct_answers) > 0:
-
                 for idx in range(0, len(ca_tokens)):
-                    print('\t CA', idx)
-
-                    # TODO: Delete, as we don't to check existence anymore
-                    already_exists = [False, False]
-                    path = "flaskr/static/"
-                    for filename in os.listdir(path):
-                        if 'current_correct_neuron' + str(neuron) + '_' + str(i) + '_' + str(
-                                idx) + '.png' in filename:
-                            already_exists[0] = True
-                            print(filename, 'already exists')
-                        if 'thumbnail_current_correct_neuron' + str(neuron) + '_' + str(i) + '_' + str(
-                                idx) + '.png' in filename:
-                            already_exists[1] = True
-                            print(filename, 'already exists')
-                        if already_exists[1] and already_exists[0]:
-                            break
-                    # End existence check
-
-                    # Full-size images
-                    words = np.array([vocabulary_inv[x] for x in ca_tokens[idx]])
-                    if not already_exists[0]:
-                        chunk_size = 10
-                        padding_length = len(ca_padded_tokens[idx]) - len(words)
-                        if len(words) > chunk_size:
-                            chunks = np.split(range(len(words)),
-                                              [x for x in range(len(words)) if x % 10 == 0 and x != 0])
-
-                            max_chunk = max([len(x) for x in chunks])
-                            a4_dims = (3 * len(chunks), 1 * chunk_size)
-                            fig, axes = plt.subplots(figsize=a4_dims, ncols=len(chunks), sharex=True, sharey=False)
-
-                            cbar_ax = fig.add_axes([0.5 * len(chunks), .3, .03, .4])
-                            for j, chunk_indices in enumerate(chunks):
-                                ax = axes[j]
-
-                                im = sns.heatmap(ax=ax, data=np.expand_dims(np.append(
-                                    rnn_values_ca[idx, [x + padding_length for x in chunk_indices],
-                                    neuron:neuron + 1],
-                                    [0] * (max_chunk - 1 - len(chunk_indices))), axis=1),
-                                                 linewidths=1, annot=True,
-                                                 cmap=sns.diverging_palette(220, 20, n=7),
-                                                 cbar=j == 0,
-                                                 vmin=min_ca, vmax=max_ca,
-                                                 cbar_ax=None if j else cbar_ax)
-                                ax.set_yticklabels(
-                                    np.append(words[chunk_indices], [''] * (max_chunk - 1 - len(chunk_indices))),
-                                    va='center', rotation=0, fontsize=12)
-
-                                plt.sca(ax)
-                        else:
-                            a4_dims = (3 * 1, 1 * len(words))
-                            fig, ax = plt.subplots(figsize=a4_dims)
-                            sns_plot = sns.heatmap(ax=ax,
-                                                   data=rnn_values_ca[idx, -len(ca_tokens[idx]):,
-                                                        neuron:neuron + 1],
-                                                   yticklabels=words,
-                                                   cmap=sns.diverging_palette(220, 20, n=7))
-                            sns_plot.set_yticklabels(sns_plot.get_yticklabels(), rotation=0, fontsize=12)
-
-                        fig.tight_layout()
-                        fig.savefig(
-                            'flaskr/static/current_correct_neuron' + str(neuron) + '_' + str(i) + '_' + str(
-                                idx) + '.png',
-                            bbox_inches='tight')
-                        plt.close()
-                    # End full-size images
-
-                    # Thumbnail images
-                    if not already_exists[1]:
-                        a4_dims = (5, 5)
-                        fig, ax = plt.subplots(figsize=a4_dims)
-                        sns_plot = sns.heatmap(ax=ax,
-                                               data=rnn_values_ca[idx, -len(ca_tokens[idx]):, neuron:neuron + 1],
-                                               yticklabels=words,
-                                               cmap=sns.diverging_palette(220, 20, n=7))
-                        sns_plot.set_yticklabels(sns_plot.get_yticklabels(), rotation=0, fontsize=8)
-                        fig.savefig(
-                            'flaskr/static/thumbnail_current_correct_neuron' + str(neuron) + '_' + str(i) + '_' + str(
-                                idx) + '.png', bbox_inches='tight')
-                        plt.close()
-                    # End thumbnails
-
+                    print('\tCorrect Answer', idx)
                     # PLOTLY
                     words = [vocabulary_inv[x] for x in ca_tokens[idx]]
                     heatmap_points = {'z': rnn_values_ca[idx, -len(ca_tokens[idx]):, neuron:neuron + 1].tolist(),
                                       'y': words,
                                       'type': 'heatmap'}
-                    # print('pl_ca_heatmap_thumbs', pl_ca_heatmap_thumbs)
-                    if i in pl_ca_heatmap_thumbs:
-                        pl_ca_heatmap_thumbs[i].append(heatmap_points)
+                    if i in pl_ca_heatmap_points:
+                        pl_ca_heatmap_points[i].append(heatmap_points)
                     else:
-                        pl_ca_heatmap_thumbs[i] = [heatmap_points]
+                        pl_ca_heatmap_points[i] = [heatmap_points]
 
             # Same as above, but for wrong answers
             if len(wrong_answers) > 0:
                 for idx in range(0, len(wa_tokens)):
-                    print('\t WA', idx)
-                    already_exists = [False, False]
-                    path = "flaskr/static/"
-                    for filename in os.listdir(path):
-                        if 'current_wrong_neuron' + str(neuron) + '_' + str(i) + '_' + str(
-                                idx) + '.png' in filename:
-                            already_exists[0] = True
-                            print(filename, 'already exists')
-                        if 'thumbnail_current_wrong_neuron' + str(neuron) + '_' + str(i) + '_' + str(
-                                idx) + '.png' in filename:
-                            already_exists[1] = True
-                            print(filename, 'already exists')
-                        if already_exists[1] and already_exists[0]:
-                            break
-                    words = np.array([vocabulary_inv[x] for x in wa_tokens[idx]])
-                    print(already_exists)
-                    if not already_exists[0]:
-                        chunk_size = 10
-                        padding_length = len(wa_padded_tokens[idx]) - len(words)
-                        if len(words) > chunk_size:
-                            chunks = np.split(range(len(words)),
-                                              [x for x in range(len(words)) if x % 10 == 0 and x != 0])
-                            max_chunk = max([len(x) for x in chunks])
-                            a4_dims = (3 * len(chunks), 1 * chunk_size)
-                            fig, axes = plt.subplots(figsize=a4_dims, ncols=len(chunks), sharex=True, sharey=False)
-
-                            cbar_ax = fig.add_axes([0.5 * len(chunks), .3, .03, .4])
-                            for j, chunk_indices in enumerate(chunks):
-                                ax = axes[j]
-
-                                im = sns.heatmap(ax=ax, data=np.expand_dims(np.append(
-                                    rnn_values_wa[idx, [x + padding_length for x in chunk_indices],
-                                    neuron:neuron + 1],
-                                    [0] * (max_chunk - 1 - len(chunk_indices))), axis=1),
-                                                 linewidths=1, annot=True,
-                                                 cmap=sns.diverging_palette(220, 20, n=7),
-                                                 cbar=j == 0,
-                                                 vmin=min_wa, vmax=max_wa,
-                                                 cbar_ax=None if j else cbar_ax)
-                                ax.set_yticklabels(
-                                    np.append(words[chunk_indices], [''] * (max_chunk - 1 - len(chunk_indices))),
-                                    va='center', rotation=0, fontsize=12)
-
-                                plt.sca(ax)
-                        else:
-                            a4_dims = (3 * 1, 1 * len(words))
-                            fig, ax = plt.subplots(figsize=a4_dims)
-                            sns_plot = sns.heatmap(ax=ax,
-                                                   data=rnn_values_wa[idx, -len(wa_tokens[idx]):,
-                                                        neuron:neuron + 1],
-                                                   yticklabels=words,
-                                                   cmap=sns.diverging_palette(220, 20, n=7))
-                            sns_plot.set_yticklabels(sns_plot.get_yticklabels(), rotation=0, fontsize=12)
-
-                        fig.tight_layout()
-                        filename = 'flaskr/static/current_wrong_neuron' + str(neuron) + '_' + str(i) + '_' + str(
-                            idx) + '.png'
-                        fig.savefig(filename,
-                                    bbox_inches='tight')
-                        print(filename, 'generated')
-                        plt.close()
-                    if not already_exists[1]:
-                        a4_dims = (5, 5)
-                        fig, ax = plt.subplots(figsize=a4_dims)
-                        sns_plot = sns.heatmap(ax=ax,
-                                               data=rnn_values_wa[idx, -len(wa_tokens[idx]):, neuron:neuron + 1],
-                                               yticklabels=words,
-                                               cmap=sns.diverging_palette(220, 20, n=7))
-                        sns_plot.set_yticklabels(sns_plot.get_yticklabels(), rotation=0, fontsize=8)
-                        filename = 'flaskr/static/thumbnail_current_wrong_neuron' + str(neuron) + '_' + str(
-                            i) + '_' + str(
-                            idx) + '.png'
-                        fig.savefig(filename,
-                                    bbox_inches='tight')
-                        print(filename, 'generated')
-                        plt.close()
+                    print('\tWrong Answer', idx)
+                    words = [vocabulary_inv[x] for x in wa_tokens[idx]]
+                    heatmap_points = {'z': rnn_values_wa[idx, -len(wa_tokens[idx]):, neuron:neuron + 1].tolist(),
+                                      'y': words,
+                                      'type': 'heatmap'}
+                    if i in pl_wa_heatmap_points:
+                        pl_wa_heatmap_points[i].append(heatmap_points)
+                    else:
+                        pl_wa_heatmap_points[i] = [heatmap_points]
 
     all_firings = [x for i in session['indices'] for x in activation_per_word_data['wa_firings' + str(i)]] + [x for
                                                                                                               i in
@@ -563,21 +429,19 @@ def display_neuron(neuron):
     asked_questions = qa_pairs['question']
 
     # return render_template('viz_neuron.html', wrong_answers=all_wrong_answers,
-
-    print('indexed_correct_answers', indexed_correct_answers)
-    # print('indexed_highlighted_correct_answers', indexed_highlighted_correct_answers)
-    return render_template('index.html', wrong_answers=all_wrong_answers,
-                           correct_answers=all_correct_answers,
-                           highlighted_correct_answers=all_highlighted_correct_answers,
-                           highlighted_wrong_answers=all_highlighted_wrong_answers, neuron=neuron,
+    return render_template('index.html',
+                           neuron=neuron,
                            neuron_num=neuron_num, random=session['random'], indices=session['indices'],
                            scale=session['scale'], activated_words=activated_words,
                            antiactivated_words=antiactivated_words,
                            asked_questions=asked_questions,
                            # plotly
-                           pl_ca_heatmap_thumbs=pl_ca_heatmap_thumbs,
+                           pl_ca_heatmap_points=pl_ca_heatmap_points,
+                           pl_wa_heatmap_points=pl_wa_heatmap_points,
                            indexed_correct_answers=indexed_correct_answers,
-                           indexed_highlighted_correct_answers=indexed_highlighted_correct_answers
+                           indexed_highlighted_correct_answers=indexed_highlighted_correct_answers,
+                           indexed_wrong_answers=indexed_wrong_answers,
+                           indexed_highlighted_wrong_answers=indexed_highlighted_wrong_answers
                            )
 
 

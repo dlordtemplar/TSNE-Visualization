@@ -46,11 +46,11 @@
 
         function preloader() {
             var indices = {{indices | safe}};
-            var pl_ca_heatmap_thumbs = {{pl_ca_heatmap_thumbs | safe}};
+            var pl_ca_heatmap_points = {{pl_ca_heatmap_points | safe}};
             for (var i = 0; i < indices.length; i++) {
-                for (var idx = 0; idx < pl_ca_heatmap_thumbs[i].length; idx++) {
+                for (var idx = 0; idx < pl_ca_heatmap_points[i].length; idx++) {
                     // Plotly wants this value wrapped in an array
-                    var currentPlot = [pl_ca_heatmap_thumbs[i][idx]];
+                    var currentPlot = [pl_ca_heatmap_points[i][idx]];
                     var words = currentPlot[0].y;
                     currentPlot[0].text = words;
 
@@ -75,6 +75,39 @@
 
                     // Draw modal chart as a fully functional chart
                     drawChart(i, idx, currentPlot, 'ca_modal', layout, false);
+                }
+
+            }
+
+            var pl_wa_heatmap_points = {{pl_wa_heatmap_points | safe}};
+            for (var i = 0; i < indices.length; i++) {
+                for (var idx = 0; idx < pl_wa_heatmap_points[i].length; idx++) {
+                    // Plotly wants this value wrapped in an array
+                    var currentPlot = [pl_wa_heatmap_points[i][idx]];
+                    var words = currentPlot[0].y;
+                    currentPlot[0].text = words;
+
+                    // Replace duplicate words with "unique" versions
+                    currentPlot[0].y = createFakeUniqueWords(words);
+
+                    var layout = {};
+
+                    // Draw thumbnail as a static chart
+                    drawChart(i, idx, currentPlot, 'wa_thumb', layout, true);
+
+                    // TODO: Strip fakeUniqueWord values from workaround in hover tooltip
+                    // Hiding "x" values from tooltip here as they are all 0.
+                    // This method below did not work for me.
+                    // https://stackoverflow.com/questions/41128318/is-it-possible-to-change-text-in-hover-tool-tip-for-plotlyjs-bubble-chart
+                    currentPlot[0].hoverinfo = 'y+z';
+
+                    // Increase chart height for long sentences
+                    if (words.length > 10) {
+                        layout.height = 700 + words.length * 10;
+                    }
+
+                    // Draw modal chart as a fully functional chart
+                    drawChart(i, idx, currentPlot, 'wa_modal', layout, false);
                 }
 
             }
@@ -217,37 +250,72 @@
     </div>
     <!-- Template end -->
 
+    <!-- Template start -->
     <div class="row">
-        <div class="col-xs-12">
-            <ol>
-                <li>yes it is right behind kahrama in the national area</li>
-            </ol>
+        <div class="col" id="content_wa">
 
+            <br>
+            {% for i in indices %}
+                {% for highlighted_wrong_answers in indexed_highlighted_wrong_answers[i] %}
+                    QA pair #{{ i }}
+                    <br>
+                    Question: {{ asked_questions[i] }}
+                    <br>
+                    <br>
+                    <ol>
+                        {% for highlighted_wrong_answer in highlighted_wrong_answers %}
+                            <li>{{ highlighted_wrong_answer|safe }}</li>
+                        {% endfor %}
+                    </ol>
+                {% endfor %}
+
+                <br>Heatmaps for QA pair #{{ i }}
+                <div class="row">
+                    {% for idx in range(indexed_wrong_answers[i]|length) %}
+                        <div class="col-lg-2 col-md-3 col-xs-4">
+                            <div data-toggle="modal" data-target="#modal_wa_{{ i }}_{{ idx }}"
+                                 class="pl_chart chart_thumb"
+                                 id="wa_thumb_{{ i }}_{{ idx }}">
+                            </div>
+
+                            <!-- Modal -->
+                            <div class="modal fade" id="modal_wa_{{ i }}_{{ idx }}" tabindex="-1" role="dialog"
+                                 aria-labelledby="modal_wa_{{ i }}_{{ idx }}_title" aria-hidden="true">
+                                <div class="modal-dialog" role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="modal_wa_{{ i }}_{{ idx }}_title">
+                                                Neuron activation heatmap
+                                            </h5>
+                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                <span aria-hidden="true">&times;</span>
+                                            </button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>
+                                                The warm colors correspond to positive values, and the cold ones to
+                                                negative values.
+                                                <br>
+                                                The more intense the color, the higher the absolute value.
+                                            </p>
+                                            <br/>
+                                            <p class="lead">
+                                                {{ ' '.join(indexed_wrong_answers[i][idx]) }}
+                                            </p>
+                                            <div class="pl_chart" id="wa_modal_{{ i }}_{{ idx }}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                <hr class='w-100'>
+            {% endfor %}
         </div>
     </div>
-    <div class="row">
-        <div class="col-xs-12">
-            <h2 id="wrong-answers">Wrong Answers</h2>
-            <p>QA pair #0
-                QUESTION: massage oil is there any place i can find scented massage oils in qatar?</p>
-
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-xs-12">
-            <ol>
-                <li>whats the name of the shop</li>
-            </ol>
-            <p>Heatmaps go here, full-screen modals for close-up.</p>
-
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-xs-12">
-            <h2 id="wrong-answers-2-3-4-5">Wrong Answers 2, 3, 4, 5</h2>
-
-        </div>
-    </div>
+    <!-- Template end -->
     <!-- END Custom Content -->
 </div>
 
