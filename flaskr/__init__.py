@@ -33,4 +33,7 @@ def create_app(test_config=None):
     from . import viz
     app.register_blueprint(viz.bp)
 
+    from . import pair
+    app.register_blueprint(pair.bp)
+
     return app
