@@ -7,7 +7,6 @@
 - nltk
 - pyenchant
 - scikit-learn
-- seaborn
 - spacy (You will need to get the English model: "python -m spacy download en")
 - tensorflow-gpu (NOT tensorflow. You need the GPU)
 

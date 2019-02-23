@@ -2,8 +2,6 @@ import pickle
 import random
 from threading import Lock
 
-# plotting settings
-import seaborn as sns
 import tensorflow as tf
 from flask import (
     Blueprint, render_template, request, session
@@ -13,8 +11,6 @@ from keras.models import model_from_json
 from keras.preprocessing.sequence import pad_sequences
 
 from loading_preprocessing_TC import *
-
-sns.set()
 
 bp = Blueprint('viz', __name__)
 MODEL_DIR = 'out/data/semeval/models'
@@ -127,6 +123,68 @@ def load_data():
     train, answer_texts_train = xml2dataframe_Labels(train_xml, 'train')
     answer_texts_train.set_index('answer_id', drop=False, inplace=True)
     return train, answer_texts_train
+
+
+def prepare_data(texts):
+    """Tokenize texts and pad resulting sequences of words using Keras functions."""
+    global tokenizer, embeddings
+    tokens = tokenizer.texts_to_sequences(texts)
+    padded_tokens = pad_sequences(tokens, maxlen=MAX_LENGTH, value=embeddings.shape[0] - 1)
+    return tokens, padded_tokens
+
+
+def visualize_model_deep(model, question_lstm=True):
+    """Retrieve weights of the second shared LSTM to visualize neuron activations."""
+    recurrent_layer = model.get_layer('SharedLSTM2')
+    output_layer = model.layers[-1]
+
+    inputs = []
+    inputs.extend(model.inputs)
+
+    outputs = []
+    outputs.extend(model.outputs)
+    if question_lstm:
+        outputs.append(recurrent_layer.get_output_at(1))
+    else:
+        outputs.append(recurrent_layer.get_output_at(0))
+
+    print('inputs', inputs)
+    print('outputs', outputs)
+    global graph
+    with graph.as_default():
+        all_function = K.function(inputs, outputs)
+        output_function = K.function([output_layer.input], model.outputs)
+    return all_function, output_function
+
+
+def highlight_neuron(rnn_values, texts, tokens, scale, neuron):
+    """Generate HTML code where each word is highlighted according to a given neuron activity on it."""
+    tag_string = "<span data-toggle=\"tooltip\" title=\"SCORE\"><span style = \"background-color: rgba(COLOR, OPACITY);\">WORD</span></span>"
+    old_texts = texts
+    texts = []
+    for idx in range(0, len(old_texts)):
+        current_neuron_values = rnn_values[idx, :, neuron]
+        current_neuron_values = current_neuron_values[-len(tokens[idx]):]
+        words = [vocabulary_inv[x] for x in tokens[idx]]
+        current_strings = []
+        if scale:
+            scaled = [
+                ((x - min(current_neuron_values)) * (2) / (
+                        max(current_neuron_values) - min(current_neuron_values))) + (
+                    -1)
+                for x in current_neuron_values]
+        else:
+            scaled = current_neuron_values
+        for score, word, scaled_score in zip(current_neuron_values, words, scaled):
+            if score > 0:
+                color = '195, 85, 58'
+            else:
+                color = '63, 127, 147'
+            current_string = tag_string.replace('SCORE', str(score)).replace('WORD', word).replace('OPACITY', str(
+                abs(scaled_score))).replace('COLOR', color)
+            current_strings.append(current_string)
+        texts.append(' '.join(current_strings))
+    return texts
 
 
 @bp.route('/neuron', defaults={'neuron': 0}, strict_slashes=False, methods=['GET', 'POST'])
@@ -408,65 +466,3 @@ def display_neuron(neuron):
                            indexed_wrong_answers=indexed_wrong_answers,
                            indexed_highlighted_wrong_answers=indexed_highlighted_wrong_answers
                            )
-
-
-def prepare_data(texts):
-    """Tokenize texts and pad resulting sequences of words using Keras functions."""
-    global tokenizer, embeddings
-    tokens = tokenizer.texts_to_sequences(texts)
-    padded_tokens = pad_sequences(tokens, maxlen=MAX_LENGTH, value=embeddings.shape[0] - 1)
-    return tokens, padded_tokens
-
-
-def visualize_model_deep(model, question_lstm=True):
-    """Retrieve weights of the second shared LSTM to visualize neuron activations."""
-    recurrent_layer = model.get_layer('SharedLSTM2')
-    output_layer = model.layers[-1]
-
-    inputs = []
-    inputs.extend(model.inputs)
-
-    outputs = []
-    outputs.extend(model.outputs)
-    if question_lstm:
-        outputs.append(recurrent_layer.get_output_at(1))
-    else:
-        outputs.append(recurrent_layer.get_output_at(0))
-
-    print('inputs', inputs)
-    print('outputs', outputs)
-    global graph
-    with graph.as_default():
-        all_function = K.function(inputs, outputs)
-        output_function = K.function([output_layer.input], model.outputs)
-    return all_function, output_function
-
-
-def highlight_neuron(rnn_values, texts, tokens, scale, neuron):
-    """Generate HTML code where each word is highlighted according to a given neuron activity on it."""
-    tag_string = "<span data-toggle=\"tooltip\" title=\"SCORE\"><span style = \"background-color: rgba(COLOR, OPACITY);\">WORD</span></span>"
-    old_texts = texts
-    texts = []
-    for idx in range(0, len(old_texts)):
-        current_neuron_values = rnn_values[idx, :, neuron]
-        current_neuron_values = current_neuron_values[-len(tokens[idx]):]
-        words = [vocabulary_inv[x] for x in tokens[idx]]
-        current_strings = []
-        if scale:
-            scaled = [
-                ((x - min(current_neuron_values)) * (2) / (
-                        max(current_neuron_values) - min(current_neuron_values))) + (
-                    -1)
-                for x in current_neuron_values]
-        else:
-            scaled = current_neuron_values
-        for score, word, scaled_score in zip(current_neuron_values, words, scaled):
-            if score > 0:
-                color = '195, 85, 58'
-            else:
-                color = '63, 127, 147'
-            current_string = tag_string.replace('SCORE', str(score)).replace('WORD', word).replace('OPACITY', str(
-                abs(scaled_score))).replace('COLOR', color)
-            current_strings.append(current_string)
-        texts.append(' '.join(current_strings))
-    return texts
