@@ -1,0 +1,9 @@
+.modal-dialog {
+    width: auto;
+    height: 100%;
+    max-width: 750px;
+}
+
+.chart_thumb {
+    cursor: pointer;
+}

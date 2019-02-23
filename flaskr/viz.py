@@ -1,4 +1,3 @@
-import os
 import pickle
 import random
 from threading import Lock
@@ -13,7 +12,6 @@ from keras import backend as K
 from keras.models import model_from_json
 from keras.preprocessing.sequence import pad_sequences
 
-from flaskr.db import get_db
 from loading_preprocessing_TC import *
 
 sns.set()
@@ -58,27 +56,6 @@ def setup():
         model = load_environment()
         print('loaded environment')
         print('model:', model)
-
-
-@bp.route('/viz2')
-def index():
-    db = get_db()
-    posts = db.execute(
-        'SELECT p.id, title, body, created, author_id, username'
-        ' FROM post p JOIN user u ON p.author_id = u.id'
-        ' ORDER BY created DESC'
-    ).fetchall()
-    return render_template('blog/index.html', posts=posts)
-
-
-@bp.route('/viz', strict_slashes=False)
-def visualization_index():
-    return render_template('visualization_hello.html')
-
-
-@bp.route('/viz_new', strict_slashes=False)
-def viz_new():
-    return render_template('index.html')
 
 
 def load_environment():

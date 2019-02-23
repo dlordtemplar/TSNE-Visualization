@@ -33,6 +33,8 @@
 
         function preloader() {
             var indices = {{indices | safe}};
+
+            <!-- Draw correct answer charts -->
             var pl_ca_heatmap_points = {{pl_ca_heatmap_points | safe}};
             for (var i = 0; i < indices.length; i++) {
                 if (pl_ca_heatmap_points[i] !== undefined) {
@@ -67,6 +69,7 @@
                 }
             }
 
+            <!-- Draw wrong answer charts -->
             var pl_wa_heatmap_points = {{pl_wa_heatmap_points | safe}};
             for (var i = 0; i < indices.length; i++) {
                 if (pl_wa_heatmap_points[i] !== undefined) {
@@ -115,7 +118,7 @@
         <div class="col-xs-12 col-md-6 col-xl-4">
             <p>&lt;&lt;</p>
         </div>
-        <div class="col-xl-4">
+        <div class="col-xl-4 text-center">
             <h2 id="neuron-x">Neuron {{ neuron }}</h2>
             <p>Number of QA pairs </p>
             <hr>
