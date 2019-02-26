@@ -31,11 +31,13 @@
             return fakeUniqueWords
         }
 
-        function preloader() {
-            var indices = {{indices | safe}};
+        var indices = {{indices | safe}};
+        var pl_ca_heatmap_points = {{pl_ca_heatmap_points | safe}};
+        var pl_wa_heatmap_points = {{pl_wa_heatmap_points | safe}};
+        var drawn = {};
 
+        function preloader() {
             <!-- Draw correct answer charts -->
-            var pl_ca_heatmap_points = {{pl_ca_heatmap_points | safe}};
             for (var i = 0; i < indices.length; i++) {
                 if (pl_ca_heatmap_points[i] !== undefined) {
                     for (var idx = 0; idx < pl_ca_heatmap_points[i].length; idx++) {
@@ -47,30 +49,13 @@
                         // Replace duplicate words with "unique" versions
                         currentPlot[0].y = createFakeUniqueWords(words);
 
-                        var layout = {};
-
                         // Draw thumbnail as a static chart
-                        drawChart(i, idx, currentPlot, 'ca_thumb', layout, true);
-
-                        // TODO: Strip fakeUniqueWord values from workaround in hover tooltip
-                        // Hiding "x" values from tooltip here as they are all 0.
-                        // This method below did not work for me.
-                        // https://stackoverflow.com/questions/41128318/is-it-possible-to-change-text-in-hover-tool-tip-for-plotlyjs-bubble-chart
-                        currentPlot[0].hoverinfo = 'y+z';
-
-                        // Increase chart height for long sentences
-                        if (words.length > 10) {
-                            layout.height = 700 + words.length * 10;
-                        }
-
-                        // Draw modal chart as a fully functional chart
-                        drawChart(i, idx, currentPlot, 'ca_modal', layout, false);
+                        drawChart(i, idx, currentPlot, 'ca_thumb', {}, true);
                     }
                 }
             }
 
             <!-- Draw wrong answer charts -->
-            var pl_wa_heatmap_points = {{pl_wa_heatmap_points | safe}};
             for (var i = 0; i < indices.length; i++) {
                 if (pl_wa_heatmap_points[i] !== undefined) {
                     for (var idx = 0; idx < pl_wa_heatmap_points[i].length; idx++) {
@@ -82,24 +67,8 @@
                         // Replace duplicate words with "unique" versions
                         currentPlot[0].y = createFakeUniqueWords(words);
 
-                        var layout = {};
-
                         // Draw thumbnail as a static chart
-                        drawChart(i, idx, currentPlot, 'wa_thumb', layout, true);
-
-                        // TODO: Strip fakeUniqueWord values from workaround in hover tooltip
-                        // Hiding "x" values from tooltip here as they are all 0.
-                        // This method below did not work for me.
-                        // https://stackoverflow.com/questions/41128318/is-it-possible-to-change-text-in-hover-tool-tip-for-plotlyjs-bubble-chart
-                        currentPlot[0].hoverinfo = 'y+z';
-
-                        // Increase chart height for long sentences
-                        if (words.length > 10) {
-                            layout.height = 700 + words.length * 10;
-                        }
-
-                        // Draw modal chart as a fully functional chart
-                        drawChart(i, idx, currentPlot, 'wa_modal', layout, false);
+                        drawChart(i, idx, currentPlot, 'wa_thumb', {}, true);
                     }
                 }
             }
@@ -110,6 +79,43 @@
         function drawChart(index, answerNum, data, div_id_partial, layout, isStatic) {
             Plotly.newPlot(div_id_partial + '_' + index + '_' + answerNum, data, layout, {staticPlot: isStatic});
         }
+
+        <!-- Full charts are drawn when shown to reduce page slowdown on load -->
+        $(window).on('show.bs.modal', function (e) {
+            var splitId = e.relatedTarget.id.split('_');
+            var caOrWa = splitId[0];
+            var i = splitId[2];
+            var idx = splitId[3];
+
+            if (!(caOrWa + i + idx in drawn)) {
+                // Draw modal chart as a fully functional chart
+                var layout = {};
+
+                var currentPlot = [];
+                if (caOrWa === 'ca') {
+                    currentPlot = [pl_ca_heatmap_points[i][idx]];
+                } else if (caOrWa === 'wa') {
+                    currentPlot = [pl_wa_heatmap_points[i][idx]];
+                }
+
+                var words = currentPlot[0].y;
+                currentPlot[0].text = words;
+
+                // TODO: Strip fakeUniqueWord values from workaround in hover tooltip
+                // Hiding "x" values from tooltip here as they are all 0.
+                // This method below did not work for me.
+                // https://stackoverflow.com/questions/41128318/is-it-possible-to-change-text-in-hover-tool-tip-for-plotlyjs-bubble-chart
+                currentPlot[0].hoverinfo = 'y+z';
+
+                // Increase chart height for long sentences
+                if (words.length > 10) {
+                    layout.height = 700 + words.length * 10;
+                }
+                drawChart(i, idx, currentPlot, caOrWa + '_modal', layout, false);
+                drawn[caOrWa + i + idx] = 1;
+            }
+        })
+        ;
     </script>
 {% endblock %}
 
