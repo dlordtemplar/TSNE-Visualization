@@ -335,8 +335,8 @@ def xml2dataframe_Labels(dataset, split_type):
     dataset_dataframe = pd.DataFrame.from_dict(tmp, orient='index').rename(
         columns={0: 'question', 1: 'answer_ids', 2: 'pool', 3: 'split_type'})
     for ind, row in dataset_dataframe.iterrows():
-        dataset_dataframe.set_value(ind, 'qid', int(ind.split('_')[0][1:]))
-        dataset_dataframe.set_value(ind, 'rid', int(ind.split('_')[1][1:]))
+        dataset_dataframe.at[ind, 'qid'] = int(ind.split('_')[0][1:])
+        dataset_dataframe.at[ind, 'rid'] = int(ind.split('_')[1][1:])
     dataset_dataframe = dataset_dataframe.sort_values(['qid', 'rid'])
     answer_texts_dataset = {}
     for obj in dataset:
