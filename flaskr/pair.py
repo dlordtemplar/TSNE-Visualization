@@ -389,8 +389,28 @@ def pair(pair_num):
         model_dict[0] = np.max(question_vector, axis=1)
         plotly_tsne = tsne_plot(pair_num, model_dict, labels, session['perplexity'])
 
+    # plotly
+    pl_ca_heatmaps = []
+    pl_wa_heatmaps = []
     # generate heatmaps
     if request.method == 'GET':
+        # plotly
+        if len(correct_answers) > 0:
+            for idx in range(0, len(ca_tokens)):
+                words = [vocabulary_inv[x] for x in ca_tokens[idx]]
+                heatmap_points = {'z': rnn_values_ca[idx, -len(ca_tokens[idx]):, :].tolist(),
+                                  'y': words,
+                                  'type': 'heatmap'}
+                pl_ca_heatmaps.append(heatmap_points)
+        # Same as above, but for wrong answers
+        if len(wrong_answers) > 0:
+            for idx in range(0, len(wa_tokens)):
+                words = [vocabulary_inv[x] for x in wa_tokens[idx]]
+                heatmap_points = {'z': rnn_values_wa[idx, -len(wa_tokens[idx]):, :].tolist(),
+                                  'y': words,
+                                  'type': 'heatmap'}
+                pl_wa_heatmaps.append(heatmap_points)
+
         if len(correct_answers) > 0:
             for idx in range(0, len(ca_tokens)):
                 already_exists = [False, False]
@@ -495,5 +515,7 @@ def pair(pair_num):
                            texts_len=len(qa_pairs),
                            scores_ca=scores_ca, scores_wa=scores_wa,
                            # plotly
-                           plotly_tsne=plotly_tsne
+                           plotly_tsne=plotly_tsne,
+                           pl_ca_heatmaps=pl_ca_heatmaps,
+                           pl_wa_heatmaps=pl_wa_heatmaps
                            )

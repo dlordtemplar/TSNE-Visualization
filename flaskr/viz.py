@@ -278,8 +278,8 @@ def display_neuron(neuron):
     activation_per_word_data = {}
 
     # plotly
-    pl_ca_heatmap_points = {}
-    pl_wa_heatmap_points = {}
+    pl_ca_heatmaps_indexed = {}
+    pl_wa_heatmaps_indexed = {}
     indexed_correct_answers = {}
     indexed_highlighted_correct_answers = {}
     indexed_wrong_answers = {}
@@ -391,10 +391,10 @@ def display_neuron(neuron):
                     heatmap_points = {'z': rnn_values_ca[idx, -len(ca_tokens[idx]):, neuron:neuron + 1].tolist(),
                                       'y': words,
                                       'type': 'heatmap'}
-                    if i in pl_ca_heatmap_points:
-                        pl_ca_heatmap_points[i].append(heatmap_points)
+                    if i in pl_ca_heatmaps_indexed:
+                        pl_ca_heatmaps_indexed[i].append(heatmap_points)
                     else:
-                        pl_ca_heatmap_points[i] = [heatmap_points]
+                        pl_ca_heatmaps_indexed[i] = [heatmap_points]
 
             # Same as above, but for wrong answers
             if len(wrong_answers) > 0:
@@ -403,10 +403,10 @@ def display_neuron(neuron):
                     heatmap_points = {'z': rnn_values_wa[idx, -len(wa_tokens[idx]):, neuron:neuron + 1].tolist(),
                                       'y': words,
                                       'type': 'heatmap'}
-                    if i in pl_wa_heatmap_points:
-                        pl_wa_heatmap_points[i].append(heatmap_points)
+                    if i in pl_wa_heatmaps_indexed:
+                        pl_wa_heatmaps_indexed[i].append(heatmap_points)
                     else:
-                        pl_wa_heatmap_points[i] = [heatmap_points]
+                        pl_wa_heatmaps_indexed[i] = [heatmap_points]
 
     all_firings = [x for i in session['indices'] for x in activation_per_word_data['wa_firings' + str(i)]] + [x for
                                                                                                               i in
@@ -450,8 +450,8 @@ def display_neuron(neuron):
                            antiactivated_words=antiactivated_words,
                            asked_questions=asked_questions,
                            # plotly
-                           pl_ca_heatmap_points=pl_ca_heatmap_points,
-                           pl_wa_heatmap_points=pl_wa_heatmap_points,
+                           pl_ca_heatmap_points=pl_ca_heatmaps_indexed,
+                           pl_wa_heatmap_points=pl_wa_heatmaps_indexed,
                            indexed_correct_answers=indexed_correct_answers,
                            indexed_highlighted_correct_answers=indexed_highlighted_correct_answers,
                            indexed_wrong_answers=indexed_wrong_answers,

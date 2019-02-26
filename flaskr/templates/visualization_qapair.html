@@ -319,6 +319,17 @@
                     <hr class='col-sm-8'>
 
                     <div class="row">
+                        {% for idx in range(pl_ca_heatmaps|length) %}
+                            <div id="pl_ca_{{ idx }}">
+                            </div>
+                            <script type="text/javascript">
+                                var pl_ca_heatmaps = {{ pl_ca_heatmaps|safe }};
+                                Plotly.newPlot('pl_ca_' + {{ idx }}, [pl_ca_heatmaps[{{ idx }}]], {});
+                            </script>
+                        {% endfor %}
+                    </div>
+
+                    <div class="row">
 
 
                         {% for idx in range(correct_answers|length) %}
