@@ -12,120 +12,158 @@
 
     <title>DeepLee Model Inspection: LSTM's neurons' activation heatmaps</title>
     <!-- JQuery -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
     <!-- Custom styles for this template -->
     <link href="https://getbootstrap.com/docs/4.0/examples/starter-template/starter-template.css" rel="stylesheet">
-    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.3/js/bootstrap.min.js" integrity="sha384-a5N7Y/aK3qNeh15eJKGWxsqtnX/wWdSZSKp+81YjTmS15nvnvxKHuzaWwXHDli+4" crossorigin="anonymous"></script>
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+            integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
+            crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+            integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+            crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.3/js/bootstrap.min.js"
+            integrity="sha384-a5N7Y/aK3qNeh15eJKGWxsqtnX/wWdSZSKp+81YjTmS15nvnvxKHuzaWwXHDli+4"
+            crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css"
+          integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
 
     <script src="https://use.fontawesome.com/a06231d025.js"></script>
+
+    <script src="{{ url_for('static', filename = 'plotly-latest.min.js') }}"></script>
+
     <!-- Custom styles for this template -->
     <style>
         .row-eq-height {
-  display: -webkit-box;
-  display: -webkit-flex;
-  display: -ms-flexbox;
-  display:         flex;
-}
+            display: -webkit-box;
+            display: -webkit-flex;
+            display: -ms-flexbox;
+            display: flex;
+        }
 
-body {
-  /* Margin bottom by footer height */
-  margin-bottom: 55px;
-}
-.footer {
-  position: fixed;
-  bottom: 0;
-  width: 100%;
-  background-color: #f5f5f5;
-  line-height: 45px;
-  height: 45px;
-}
+        body {
+            /* Margin bottom by footer height */
+            margin-bottom: 55px;
+        }
 
-
-        .top-buffer { margin-top:20px; }
-    		.row .no-float {
-    			display: table-cell;
-    			float: none;
-    		}
-    		.jumbotron p {
-    			font-size: 14px !important;
-    		}
-
-    		.modal-dialog {
-      width: 100%;
-      height: 100%;
-      margin: 0;
-      padding: 0;
-    }
-
-.row {
-  overflow-wrap: break-word;
-  word-wrap: break-word;
-  word-break: break-all;
-  word-break: break-word;
-  hyphens: auto;}
-    .modal-content {
-      height: auto;
-      min-height: 100%;
-      border-radius: 0;
-    }
-    .column {
-        float: left;
-        width: 33.33%;
-    }
-
-    /* Clear floats after the columns */
-    .row:after {
-        content: "";
-        display: table;
-        clear: both;
-    }
-    /* Responsive layout - when the screen is less than 600px wide, make the three columns stack on top of each other instead of next to each other */
-    @media screen and (max-width: 600px) {
-        .column {
+        .footer {
+            position: fixed;
+            bottom: 0;
             width: 100%;
+            background-color: #f5f5f5;
+            line-height: 45px;
+            height: 45px;
         }
-    }
 
-    .modal-dialog {
-     margin: 0 auto  !important;
-     }
-    @media screen and (min-width: 768px) {
-        .custom-class {
-            width: 70%; /* either % (e.g. 60%) or px (400px) */
-            max-width: 70%; /* either % (e.g. 60%) or px (400px) */
+
+        .top-buffer {
+            margin-top: 20px;
         }
-    }
-    #loading {
-        display: none;
-        cursor: wait;
-        position: absolute; width: 100%; height: 100%; background: url({{url_for('static', filename='spinner.gif')}}) no-repeat center center;
-    }
 
-    .card-text {
-        padding-left: 1rem;
-        padding-top: 1rem;
-        padding-right: 1rem;
+        .row .no-float {
+            display: table-cell;
+            float: none;
+        }
 
-    #loading_page {
-    position: absolute; width: 100%; height: 100%; background: url({{url_for('static', filename='spinner.gif')}}) no-repeat center center;
-}
+        .jumbotron p {
+            font-size: 14px !important;
+        }
+
+        .modal-dialog {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        .row {
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+            word-break: break-all;
+            word-break: break-word;
+            hyphens: auto;
+        }
+
+        .modal-content {
+            height: auto;
+            min-height: 100%;
+            border-radius: 0;
+        }
+
+        .column {
+            float: left;
+            width: 33.33%;
+        }
+
+        /* Clear floats after the columns */
+        .row:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+
+        /* Responsive layout - when the screen is less than 600px wide, make the three columns stack on top of each other instead of next to each other */
+        @media screen and (max-width: 600px) {
+            .column {
+                width: 100%;
+            }
+        }
+
+        .modal-dialog {
+            margin: 0 auto !important;
+        }
+
+        @media screen and (min-width: 768px) {
+            .custom-class {
+                width: 70%; /* either % (e.g. 60%) or px (400px) */
+                max-width: 70%; /* either % (e.g. 60%) or px (400px) */
+            }
+        }
+
+        #loading {
+            display: none;
+            cursor: wait;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: url({{url_for('static', filename='spinner.gif')}}) no-repeat center center;
+        }
+
+        .card-text {
+            padding-left: 1rem;
+            padding-top: 1rem;
+            padding-right: 1rem;
+
+        #loading_page {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: url({{url_for('static', filename='spinner.gif')}}) no-repeat center center;
+        }
     </style>
 
     <script type="text/javascript">
-        // <![CDATA[
-                function loading(){
-                    $("#loading").show();
-                    $("#content").hide();
-                    $("#loading").show();
-                    $("#content").hide();
+        var plotly_tsne = {{plotly_tsne | safe}};
+
+        function preloader() {
+            <!-- Draw TSNE chart -->
+            var layout = {
+                showlegend: false,
+                xaxis: {
+                    autorange: true,
+                    zeroline: false,
+                    showline: false
+                },
+                yaxis: {
+                    autorange: true,
+                    zeroline: false,
+                    showline: false
                 }
-        // ]]>
-        $(window).ready(function() {
-    $('#loading_page').hide();
-});
+            };
+            Plotly.newPlot('pl_tsne', plotly_tsne, layout);
+        }
+
+        window.onload = preloader;
     </script>
 
 </head>
@@ -133,257 +171,298 @@ body {
 <body>
 <div id="loading_page"></div>
 
-    <header>
-        <!-- Fixed navbar -->
-        <nav class="navbar navbar-expand-md navbar-light fixed-top bg-light">
-            <a class="navbar-brand" href="#">Model inspection</a>
-            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
-          <span class="navbar-toggler-icon"></span>
+<header>
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-expand-md navbar-light fixed-top bg-light">
+        <a class="navbar-brand" href="#">Model inspection</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse"
+                aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
         </button>
-            <div class="collapse navbar-collapse" id="navbarCollapse">
-                <ul class="navbar-nav mr-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/">Home</a>
-                    </li>
+        <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/">Home</a>
+                </li>
 
-                    <li class="nav-item active">
-                        <a class="nav-link" href="/qapair/">QA pairs</a>
-                    </li>
+                <li class="nav-item active">
+                    <a class="nav-link" href="/qapair/">QA pairs</a>
+                </li>
 
-                    <li class="nav-item">
-                        <a class="nav-link" href="/neuron/">Neurons</a>
-                    </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/neuron/">Neurons</a>
+                </li>
 
-                    <li class="nav-item">
-                        <a class="nav-link" href="/correlation/">Dependency</a>
-                    </li>
-                </ul>
-            </div>
-        </nav>
-    </header>
+                <li class="nav-item">
+                    <a class="nav-link" href="/correlation/">Dependency</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+</header>
 
-    <div class="container-fluid">
-        <div id="loading"></div>
+<div class="container-fluid">
+    <div id="loading"></div>
 
-        <div class="container-fluid" id="content">
-            <div class="row top-buffer">
-                <div class="col-sm-2"></div>
-                <div class="col-sm-8  text-center">
-                    <h1>Question-Answering Visualization</h1>
-                    <p class="lead">Here you can see the heatmaps for the LSTM's weights and track the activation of each neuron per-word. The model is a Siamese Bi-LSTM with attention (based on <a href="http://aclweb.org/anthology/P/P16/P16-1044.pdf" target="_blank">Tan's paper</a>).
-                        The dataset is <a href="http://alt.qcri.org/semeval2017/task3/" target="_blank">SemEval 2017 Task 3,
+    <div class="container-fluid" id="content">
+        <div class="row top-buffer">
+            <div class="col-sm-2"></div>
+            <div class="col-sm-8  text-center">
+                <h1>Question-Answering Visualization</h1>
+                <p class="lead">Here you can see the heatmaps for the LSTM's weights and track the activation of each
+                    neuron per-word. The model is a Siamese Bi-LSTM with attention (based on <a
+                            href="http://aclweb.org/anthology/P/P16/P16-1044.pdf" target="_blank">Tan's paper</a>).
+                    The dataset is <a href="http://alt.qcri.org/semeval2017/task3/" target="_blank">SemEval 2017 Task 3,
                         Subtask A.</a></p>
-                    <p>As illustrated in Karpathy's blog post
-                        <a href="http://karpathy.github.io/2015/05/21/rnn-effectiveness/" target="blank_">"The Unreasonable
+                <p>As illustrated in Karpathy's blog post
+                    <a href="http://karpathy.github.io/2015/05/21/rnn-effectiveness/" target="blank_">"The Unreasonable
                         Effectiveness of
-                        Recurrent Neural Networks"</a>, sometimes the neurons correspond to explainable features. If we highlight the input sequence based on the firing of a neuron in the hidden representation of the RNN, we can
-                        see that one neuron is used to remember if LSTM is in URL, another - position in the line, and so on.</p>
-                    <p>Click on a heatmap to open a larger picture. You can also choose which neuron to use to highlight a text and whether to scale its values to [-1; 1] or not.</p>
-                    <p class="lead">
-                        Example {{i|safe}} / {{texts_len|safe}}
-                    </p>
-                </div>
-
-                <div class="col-sm-2"></div>
+                        Recurrent Neural Networks"</a>, sometimes the neurons correspond to explainable features. If we
+                    highlight the input sequence based on the firing of a neuron in the hidden representation of the
+                    RNN, we can
+                    see that one neuron is used to remember if LSTM is in URL, another - position in the line, and so
+                    on.</p>
+                <p>Click on a heatmap to open a larger picture. You can also choose which neuron to use to highlight a
+                    text and whether to scale its values to [-1; 1] or not.</p>
+                <p class="lead">
+                    Example {{ i|safe }} / {{ texts_len|safe }}
+                </p>
             </div>
-            <div class="row top-buffer">
-                <div class="col-sm-3  text-center">
-{#                    <h1><a href={{url_for('pair', i=i - 1)}} onclick="loading();" title = 'Previous example'><i#}
-{#                    class="fas fa-angle-double-left"></i></a></h1>#}
-                </div>
-                <div class="col-sm-6  text-center">
-                    <h3>{{question}}</h3>
-                    <form method="POST">
-                        <div class="form-check form-check-inline" data-toggle="tooltip" data-placement="top" title="Whether to scale neuron activations to [-1; 1] or not.">
-                            <label class="form-check-label">
+
+            <div class="col-sm-2"></div>
+        </div>
+        <div class="row top-buffer">
+            <div class="col-sm-3  text-center">
+                {#                    <h1><a href={{url_for('pair', i=i - 1)}} onclick="loading();" title = 'Previous example'><i#}
+                {#                    class="fas fa-angle-double-left"></i></a></h1>#}
+            </div>
+            <div class="col-sm-6  text-center">
+                <h3>{{ question }}</h3>
+                <form method="POST">
+                    <div class="form-check form-check-inline" data-toggle="tooltip" data-placement="top"
+                         title="Whether to scale neuron activations to [-1; 1] or not.">
+                        <label class="form-check-label">
                             <input class="form-check-input" type="checkbox" name="scale" value="scale" {% if scale %}
                                    checked {% endif %}> Scale neuron activations
                         </label>
-                            <input type="submit" value="Submit" class="btn ml-2 btn-sm">
-                        </div>
-                </div>
-                <div class="col-sm-3  text-center">
-{#                    <h1><a href={{url_for('pair', i=i + 1)}} onclick="loading();" title = 'Next example'><i#}
-{#                    class="fas fa-angle-double-right"></i></a></h1>#}
+                        <input type="submit" value="Submit" class="btn ml-2 btn-sm">
+                    </div>
+            </div>
+            <div class="col-sm-3  text-center">
+                {#                    <h1><a href={{url_for('pair', i=i + 1)}} onclick="loading();" title = 'Next example'><i#}
+                {#                    class="fas fa-angle-double-right"></i></a></h1>#}
 
-                </div>
-                <div class="col-sm-3 ">
-                    <h3>Correct answers</h3>
+            </div>
+            <div class="col-sm-3 ">
+                <h3>Correct answers</h3>
 
-                    <p>
-                        <div class="form-group">
-                            <label for="neuron_num_ca" class="control-label">Number of the neuron</label>
-                            <select class="form-control" id="neuron_num_ca" name="neuron_num_ca" onchange="this.form.submit()">
+                <p>
+                <div class="form-group">
+                    <label for="neuron_num_ca" class="control-label">Number of the neuron</label>
+                    <select class="form-control" id="neuron_num_ca" name="neuron_num_ca" onchange="this.form.submit()">
                         <option value=None {% if neuron_display_ca==
-                       'None'%} selected {% endif %}>None</option>
+                       'None' %} selected {% endif %}>None
+                        </option>
                         {% for idx in range(neuron_num) %}
 
-                        <option value={{idx}} {% if neuron_display_ca== idx %} selected {% endif %}>{{idx}}</option>
+                            <option value={{ idx }} {% if neuron_display_ca== idx %} selected {% endif %}>{{ idx }}</option>
                         {% endfor %}
                     </select>
-                        </div>
-                    </p>
-
-                    {% for correct_answer in highlighted_correct_answers %}
-                    <div class="card mt-1">
-  <div class="card-block">
-    <p class="card-text">{{correct_answer|safe}}</p>
-    <div class="card-footer text-muted">Score: {{scores_ca[loop.index0][0]|round(2)}} {% if scores_ca[loop.index0][0] > 0.5 %}
-        <i class="far fa-check-circle" style="color:green;" title="Correctly classified as a correct answer"></i> {% else %} <i class="far fa-times-circle" style="color:red;" title="Incorrectly classified as a wrong answer"></i> {% endif %}
-    </div>
-  </div>
-</div>
-                    {% endfor %}
                 </div>
-                <div class="col-sm-6  text-center" style="display: flex;">
+                </p>
 
-                    <div class="row">
-                        <div class="col-sm-12">
-                            <figure class="figure">
- <img class="img-fluid" src='{{url_for('static', filename='tsne_semeval_siamese_current_qapair' + i|string + '_' + session['perplexity']|string + '.png')}}' alt = 't-SNE plot. Question is blue, correct answers are green and wrong answers are red.'>
-  <figcaption class="figure-caption">t-SNE plot. Perplexity: {{ session['perplexity'] }}. Question is blue, ground truth correct answers are green and  ground truth wrong answers are red. </figcaption>
-                            </figure>
-                            <div class="form-group row">
-  <div class="col-sm-4">
-  </div>
-  <div class="col-sm-4">
-                                 <label for="perplexity">Change perplexity value:</label>
-    <input type="text" class="form-control" id="perplexity" name="perplexity" aria-describedby="perplexity" placeholder="recommended: 5 to 50. default: 5">
-      <input type="submit" value="Plot" class="btn btn-sm" onclick=loading();>
-                        </div>
-                                  <div class="col-sm-4">
-  </div>
+                {% for correct_answer in highlighted_correct_answers %}
+                    <div class="card mt-1">
+                        <div class="card-block">
+                            <p class="card-text">{{ correct_answer|safe }}</p>
+                            <div class="card-footer text-muted">Score: {{ scores_ca[loop.index0][0]|round(2) }}
+                                {% if scores_ca[loop.index0][0] > 0.5 %}
+                                    <i class="far fa-check-circle" style="color:green;"
+                                       title="Correctly classified as a correct answer"></i> {% else %}
+                                    <i class="far fa-times-circle" style="color:red;"
+                                       title="Incorrectly classified as a wrong answer"></i> {% endif %}
                             </div>
                         </div>
-                        <hr class = 'col-sm-8'>
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="col-sm-6  text-center" style="display: flex;">
 
-                        <div class="row">
+                <div class="row" id="pl_tsne">
 
+                </div>
 
-                            {% for idx in range(correct_answers|length) %}
-
-                            <div class="col-lg-3 col-md-4 col-xs-6">
-
-                                <!-- Button trigger modal -->
-                                <img class="img-fluid" src='{{url_for('static', filename='thumbnail_current_correct_qapair' + i|string + '_' +
-                            idx|string +'.png')}}' alt = 'A neuron activation heatmap for the correct answer #{{idx}}'>
-                                <button type="button" class="btn" data-toggle="modal" data-target="#modal_ca_{{idx}}">
-                                Zoom
-                            </button>
-
-                                <!-- Modal -->
-                                <div class="modal fade" id="modal_ca_{{idx}}" tabindex="-1" role="dialog" aria-labelledby="modal_ca_{{idx}}_title" aria-hidden="true">
-                                    <div class="modal-dialog custom-class" role="document">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title" id="modal_ca_{{idx}}_title">Neuron Activation Hatmap</h5>
-                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                <span aria-hidden="true">&times;</span>
-                                            </button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <p>The warm colors correspond to positive values, and the cold ones - to negative.<br> The more intense the color, the higher the absolute value.<br> The plots are divided into chunks of 32 neurons for better visibility.</p>
-                                                <p class="lead">«{{correct_answers[idx]}}»</p>
-                                                {% for j in range(0, neuron_num, 32) %}
-                                                <img src='{{url_for('static', filename='current_correct_qapair' + i|string + '_' + idx|string +
-                                           '_chunk_'+ j|string +'.png')}}'> {% endfor %}
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn" data-dismiss="modal">Close</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-
-                            </div>{% endfor %}
-
-                        </div>
-                        <hr class = 'col-sm-8'>
-
-                        <div class="row">
-                            {% for idx in range(wrong_answers|length) %}
-                            <div class="col-lg-3 col-md-4 col-xs-6">
-                                <!-- Button trigger modal -->
-                                <img class="img-fluid" src='{{url_for('static', filename='thumbnail_current_wrong_qapair' + i|string + '_' +
-                            idx|string +'.png')}}' alt = 'A neuron activation heatmap for the wrong answer #{{idx}}'>
-                                <button type="button" class="btn" data-toggle="modal" data-target="#modal_wa_{{idx}}">
-                                Zoom
-                            </button>
-
-                                <!-- Modal -->
-                                <div class="modal fade" id="modal_wa_{{idx}}" tabindex="-1" role="dialog" aria-labelledby="modal_wa_{{idx}}_title" aria-hidden="true">
-                                    <div class="modal-dialog custom-class" role="document">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title" id="modal_wa_{{idx}}_title">Neuron Activation Heatmap</h5>
-                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                <span aria-hidden="true">&times;</span>
-                                            </button>
-                                            </div>
-                                            <div class="modal-body">
-                                            <p>The warm colors correspond to positive values, and the cold ones - to negative. <br>The more intense the color, the higher the absolute value. <br>The plots are divided into chunks of 32 neurons for better visibility.</p>
-
-                                                <p class="lead">«{{wrong_answers[idx]}}»</p>
-                                                {% for j in range(0, neuron_num, 32) %}
-                                                <img src='{{url_for('static', filename='current_wrong_qapair' + i|string + '_' + idx|string +
-                                           '_chunk_'+ j|string +'.png')}}'> {% endfor %}
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn" data-dismiss="modal">Close</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-
-                            </div>{% endfor %}
+                <div class="row">
+                    <div class="col-sm-12">
+                        <figure class="figure">
+                            <img class="img-fluid"
+                                 src='{{ url_for('static', filename='tsne_semeval_siamese_current_qapair' + i|string + '_' + session['perplexity']|string + '.png') }}'
+                                 alt='t-SNE plot. Question is blue, correct answers are green and wrong answers are red.'>
+                            <figcaption class="figure-caption">t-SNE plot. Perplexity: {{ session['perplexity'] }}.
+                                Question is blue, ground truth correct answers are green and ground truth wrong answers
+                                are red.
+                            </figcaption>
+                        </figure>
+                        <div class="form-group row">
+                            <div class="col-sm-4">
+                            </div>
+                            <div class="col-sm-4">
+                                <label for="perplexity">Change perplexity value:</label>
+                                <input type="text" class="form-control" id="perplexity" name="perplexity"
+                                       aria-describedby="perplexity" placeholder="recommended: 5 to 50. default: 5">
+                                <input type="submit" value="Plot" class="btn btn-sm" onclick=loading();>
+                            </div>
+                            <div class="col-sm-4">
+                            </div>
                         </div>
                     </div>
+                    <hr class='col-sm-8'>
 
+                    <div class="row">
+
+
+                        {% for idx in range(correct_answers|length) %}
+
+                            <div class="col-lg-3 col-md-4 col-xs-6">
+
+                                <!-- Button trigger modal -->
+                                <img class="img-fluid" src='{{ url_for('static', filename='thumbnail_current_correct_qapair' + i|string + '_' +
+                            idx|string +'.png') }}' alt='A neuron activation heatmap for the correct answer #{{ idx }}'>
+                                <button type="button" class="btn" data-toggle="modal" data-target="#modal_ca_{{ idx }}">
+                                    Zoom
+                                </button>
+
+                                <!-- Modal -->
+                                <div class="modal fade" id="modal_ca_{{ idx }}" tabindex="-1" role="dialog"
+                                     aria-labelledby="modal_ca_{{ idx }}_title" aria-hidden="true">
+                                    <div class="modal-dialog custom-class" role="document">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="modal_ca_{{ idx }}_title">Neuron Activation
+                                                    Hatmap</h5>
+                                                <button type="button" class="close" data-dismiss="modal"
+                                                        aria-label="Close">
+                                                    <span aria-hidden="true">&times;</span>
+                                                </button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p>The warm colors correspond to positive values, and the cold ones - to
+                                                    negative.<br> The more intense the color, the higher the absolute
+                                                    value.<br> The plots are divided into chunks of 32 neurons for
+                                                    better visibility.</p>
+                                                <p class="lead">«{{ correct_answers[idx] }}»</p>
+                                                {% for j in range(0, neuron_num, 32) %}
+                                                    <img src='{{ url_for('static', filename='current_correct_qapair' + i|string + '_' + idx|string +
+                                           '_chunk_'+ j|string +'.png') }}'> {% endfor %}
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn" data-dismiss="modal">Close</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                            </div>{% endfor %}
+
+                    </div>
+                    <hr class='col-sm-8'>
+
+                    <div class="row">
+                        {% for idx in range(wrong_answers|length) %}
+                            <div class="col-lg-3 col-md-4 col-xs-6">
+                                <!-- Button trigger modal -->
+                                <img class="img-fluid" src='{{ url_for('static', filename='thumbnail_current_wrong_qapair' + i|string + '_' +
+                            idx|string +'.png') }}' alt='A neuron activation heatmap for the wrong answer #{{ idx }}'>
+                                <button type="button" class="btn" data-toggle="modal" data-target="#modal_wa_{{ idx }}">
+                                    Zoom
+                                </button>
+
+                                <!-- Modal -->
+                                <div class="modal fade" id="modal_wa_{{ idx }}" tabindex="-1" role="dialog"
+                                     aria-labelledby="modal_wa_{{ idx }}_title" aria-hidden="true">
+                                    <div class="modal-dialog custom-class" role="document">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="modal_wa_{{ idx }}_title">Neuron Activation
+                                                    Heatmap</h5>
+                                                <button type="button" class="close" data-dismiss="modal"
+                                                        aria-label="Close">
+                                                    <span aria-hidden="true">&times;</span>
+                                                </button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p>The warm colors correspond to positive values, and the cold ones - to
+                                                    negative. <br>The more intense the color, the higher the absolute
+                                                    value. <br>The plots are divided into chunks of 32 neurons for
+                                                    better visibility.</p>
+
+                                                <p class="lead">«{{ wrong_answers[idx] }}»</p>
+                                                {% for j in range(0, neuron_num, 32) %}
+                                                    <img src='{{ url_for('static', filename='current_wrong_qapair' + i|string + '_' + idx|string +
+                                           '_chunk_'+ j|string +'.png') }}'> {% endfor %}
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn" data-dismiss="modal">Close</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                            </div>{% endfor %}
+                    </div>
                 </div>
-                <div class="col-sm-3">
-                    <h3>Wrong answers</h3>
+
+            </div>
+            <div class="col-sm-3">
+                <h3>Wrong answers</h3>
 
 
-                    <p>
-                        <div class="form-group">
-                            <label for="neuron_num_wa" class="control-label">Number of the neuron</label>
-                            <select class="form-control" id="neuron_num_wa" name="neuron_num_wa" onchange="this.form.submit()">
+                <p>
+                <div class="form-group">
+                    <label for="neuron_num_wa" class="control-label">Number of the neuron</label>
+                    <select class="form-control" id="neuron_num_wa" name="neuron_num_wa" onchange="this.form.submit()">
                         <option {% if neuron_display_wa==
-                       'None'%} selected {% endif %}>None</option>
+                       'None' %} selected {% endif %}>None
+                        </option>
                         {% for idx in range(neuron_num) %}
 
-                        <option value={{idx}} {% if neuron_display_wa== idx %} selected {% endif %}>{{idx}}</option>
+                            <option value={{ idx }} {% if neuron_display_wa== idx %} selected {% endif %}>{{ idx }}</option>
                         {% endfor %}
                     </select>
-                        </div>
-                        </form>
-                    </p>
-
-                    {% for wrong_answer in highlighted_wrong_answers %}
-                    <div class="card mt-1">
-  <div class="card-block">
-    <p class="card-text">{{wrong_answer|safe}}</p>
-    <div class="card-footer text-muted">Score: {{scores_wa[loop.index0][0]|round(2)}} {% if scores_wa[loop.index0][0] > 0.5 %}
-        <i class="far fa-check-circle" style="color:green;" title="Incorrectly classified as a correct answer"></i> {% else %} <i class="far fa-times-circle" style="color:red;" title="Correctly classified as a wrong answer"></i> {% endif %}
-    </div>
-  </div>
-</div>
-                    {% endfor %}
                 </div>
+                </form>
+                </p>
+
+                {% for wrong_answer in highlighted_wrong_answers %}
+                    <div class="card mt-1">
+                        <div class="card-block">
+                            <p class="card-text">{{ wrong_answer|safe }}</p>
+                            <div class="card-footer text-muted">Score: {{ scores_wa[loop.index0][0]|round(2) }}
+                                {% if scores_wa[loop.index0][0] > 0.5 %}
+                                    <i class="far fa-check-circle" style="color:green;"
+                                       title="Incorrectly classified as a correct answer"></i> {% else %}
+                                    <i class="far fa-times-circle" style="color:red;"
+                                       title="Correctly classified as a wrong answer"></i> {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
             </div>
-
-
         </div>
-        <!-- /container -->
+
+
     </div>
+    <!-- /container -->
+</div>
 
 
-
- 							    <footer class="footer text-center">
-							      <small class="text-muted">&copy; 2018 DFKI. <a href = "https://www.dfki.de/web/data-protection-de" target="_blank">Data Protection</a>. Powered with sklearn, Flask and Keras (Tensorflow).</small>
-							    </footer>
+<footer class="footer text-center">
+    <small class="text-muted">&copy; 2018 DFKI. <a href="https://www.dfki.de/web/data-protection-de" target="_blank">Data
+        Protection</a>. Powered with sklearn, Flask and Keras (Tensorflow).
+    </small>
+</footer>
 
 </body>
 

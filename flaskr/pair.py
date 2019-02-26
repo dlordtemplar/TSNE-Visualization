@@ -200,12 +200,13 @@ def highlight_neuron(rnn_values, texts, tokens, scale, neuron):
 
 
 # TODO: just use the points, but remove the matplotlib drawing+saving
-def tsne_plot(i, model, labels, perplexity=40):
+def tsne_plot(pair_num, model, labels, perplexity=40):
     """Creates a TSNE model and plots it"""
-    tokens = []
     cmap = matplotlib.colors.ListedColormap(['red', 'green', 'blue'])
+    # TODO: Move out to global var
     num_labels_dict = {'ca': 1, 'wa': 0, 'q': 3}
     num_labels = np.array([num_labels_dict[x] for x in labels])
+    tokens = []
     for word in model.keys():
         tokens.append(model[word])
 
@@ -213,29 +214,102 @@ def tsne_plot(i, model, labels, perplexity=40):
                       metric="cosine")
     new_values = tsne_model.fit_transform(tokens)
 
+    # TODO: delete
     x = []
     y = []
     for value in new_values:
         x.append(value[0])
         y.append(value[1])
 
+    trace_question_x = []
+    trace_ca_x = []
+    trace_wa_x = []
+    trace_question_y = []
+    trace_ca_y = []
+    trace_wa_y = []
+    trace_question_text = []
+    trace_ca_text = []
+    trace_wa_text = []
+
+    for label_index in range(len(labels)):
+        if labels[label_index] == 'q':
+            trace_question_x.append(new_values[label_index][0])
+            trace_question_y.append(new_values[label_index][1])
+            trace_question_text.append('Q')
+        elif labels[label_index] == 'ca':
+            trace_ca_x.append(new_values[label_index][0])
+            trace_ca_y.append(new_values[label_index][1])
+            trace_ca_text.append('CA' + str(len(trace_ca_x)))
+        elif labels[label_index] == 'wa':
+            trace_wa_x.append(new_values[label_index][0])
+            trace_wa_y.append(new_values[label_index][1])
+            trace_wa_text.append('WA' + str(len(trace_wa_x)))
+
+    marker_blue = {
+        'size': 20,
+        'color': 'rgb(0, 0, 255)'
+    }
+    marker_green = {
+        'size': 20,
+        'color': 'rgb(0, 204, 0)'
+    }
+    marker_red = {
+        'size': 20,
+        'color': 'rgb(255, 0, 0)'
+    }
+    trace_question = {
+        'name': 'Question',
+        'x': trace_question_x,
+        'y': trace_question_y,
+        'type': 'scatter',
+        'mode': 'markers+text',
+        'hoverinfo': 'name',
+        'text': trace_question_text,
+        'textposition': 'top right',
+        'marker': marker_blue
+    }
+    trace_ca = {
+        'name': 'Correct answer',
+        'x': trace_ca_x,
+        'y': trace_ca_y,
+        'type': 'scatter',
+        'mode': 'markers+text',
+        'hoverinfo': 'name',
+        'text': trace_ca_text,
+        'textposition': 'top right',
+        'marker': marker_green
+    }
+    trace_wa = {
+        'name': 'Wrong answer',
+        'x': trace_wa_x,
+        'y': trace_wa_y,
+        'type': 'scatter',
+        'mode': 'markers+text',
+        'hoverinfo': 'name',
+        'text': trace_wa_text,
+        'textposition': 'top right',
+        'marker': marker_red
+    }
+    plotly_tsne = [trace_question, trace_ca, trace_wa]
+
+    # TODO: delete
     x = np.array(x)
     y = np.array(y)
     fig = plt.figure(figsize=(6, 6))
     plt.scatter(x, y, c=num_labels, cmap=cmap)
-    fig.savefig('flaskr/static/tsne_semeval_siamese_current_qapair' + str(i) + '_' + str(perplexity) + '.png',
+    fig.savefig('flaskr/static/tsne_semeval_siamese_current_qapair' + str(pair_num) + '_' + str(perplexity) + '.png',
                 bbox_inches='tight')
     plt.close()
 
+    return plotly_tsne
 
-@bp.route('/pair', defaults={'i': 0}, strict_slashes=False, methods=['GET', 'POST'])
-@bp.route('/pair/<int:i>', strict_slashes=False, methods=['GET', 'POST'])
-def pair(i):
+
+@bp.route('/pair', defaults={'pair_num': 0}, strict_slashes=False, methods=['GET', 'POST'])
+@bp.route('/pair/<int:pair_num>', strict_slashes=False, methods=['GET', 'POST'])
+def pair(pair_num):
     global answer_texts, qa_pairs, vocabulary_inv, model
-    # global current_loaded
-    # if current_loaded != 'visualization':
-    # load_environment('visualization')
-    row = qa_pairs.iloc[i]
+
+    row = qa_pairs.iloc[pair_num]
     correct_answers = answer_texts.loc[row['answer_ids']]['answer'].values
     wrong_answers = answer_texts.loc[row['pool']]['answer'].values
     question = row['question']
@@ -294,31 +368,26 @@ def pair(i):
         if 'scale' not in session.keys():
             session['scale'] = False
 
+    plotly_tsne = []
     # generate TSNE
     if request.method == 'GET':
+        # TODO: delete
         already_exists = False
         path = "flaskr/static/"
-        for filename in os.listdir(path):
-            if 'tsne_semeval_siamese_current_qapair' + str(i) in filename:
-                already_exists = True
-                print(filename, 'already exists')
-                break
-        if not already_exists:
-            labels = ['q'] + ['ca'] * len(correct_answers) + ['wa'] * len(wrong_answers)
-            model_dict_wa = {}
-            model_dict_ca = {}
-            if len(correct_answers) > 0:
-                model_dict_ca = {i + 1: np.max(rnn_values_ca[i, :, :], axis=1) for i in range(len(correct_answers))}
-            if len(wrong_answers) > 0:
-                model_dict_wa = {i + 1: np.max(rnn_values_wa[i - len(correct_answers), :, :], axis=1) for i in
-                                 range(len(correct_answers), len(wrong_answers) + len(correct_answers))}
-            model_dict = {**model_dict_ca, **model_dict_wa}
-            all_function_deep_q, output_function_deep_q = visualize_model_deep(model, True)
-            _, rnn_values = all_function_deep_q([q_padded_tokens, [ca_padded_tokens[0]]])
-            question_vector = rnn_values[0]
-            model_dict[0] = np.max(question_vector, axis=1)
-            a4_dims = (5, 5)
-            tsne_plot(i, model_dict, labels, session['perplexity'])
+        labels = ['q'] + ['ca'] * len(correct_answers) + ['wa'] * len(wrong_answers)
+        model_dict_wa = {}
+        model_dict_ca = {}
+        if len(correct_answers) > 0:
+            model_dict_ca = {i + 1: np.max(rnn_values_ca[i, :, :], axis=1) for i in range(len(correct_answers))}
+        if len(wrong_answers) > 0:
+            model_dict_wa = {i + 1: np.max(rnn_values_wa[i - len(correct_answers), :, :], axis=1) for i in
+                             range(len(correct_answers), len(wrong_answers) + len(correct_answers))}
+        model_dict = {**model_dict_ca, **model_dict_wa}
+        all_function_deep_q, output_function_deep_q = visualize_model_deep(model, True)
+        _, rnn_values = all_function_deep_q([q_padded_tokens, [ca_padded_tokens[0]]])
+        question_vector = rnn_values[0]
+        model_dict[0] = np.max(question_vector, axis=1)
+        plotly_tsne = tsne_plot(pair_num, model_dict, labels, session['perplexity'])
 
     # generate heatmaps
     if request.method == 'GET':
@@ -327,10 +396,10 @@ def pair(i):
                 already_exists = [False, False]
                 path = "flaskr/static/"
                 for filename in os.listdir(path):
-                    if 'current_correct_qapair' + str(i) + '_' + str(idx) + '.png' in filename:
+                    if 'current_correct_qapair' + str(pair_num) + '_' + str(idx) + '.png' in filename:
                         already_exists[0] = True
                         print(filename, 'already exists')
-                    if 'thumbnail_current_correct_qapair' + str(i) + '_' + str(idx) + '.png' in filename:
+                    if 'thumbnail_current_correct_qapair' + str(pair_num) + '_' + str(idx) + '.png' in filename:
                         already_exists[1] = True
                         print(filename, 'already exists')
                     if already_exists[1] and already_exists[0]:
@@ -348,7 +417,7 @@ def pair(i):
                                                xticklabels=range(j, j + chunk_size))
                         sns_plot.set_yticklabels(sns_plot.get_yticklabels(), rotation=0, fontsize=8)
                         fig.savefig(
-                            'flaskr/static/current_correct_qapair' + str(i) + '_' + str(idx) + '_chunk_' + str(
+                            'flaskr/static/current_correct_qapair' + str(pair_num) + '_' + str(idx) + '_chunk_' + str(
                                 j) + '.png',
                             bbox_inches='tight')
                         plt.close()
@@ -359,18 +428,19 @@ def pair(i):
                                            yticklabels=words,
                                            cmap=sns.diverging_palette(220, 20, n=7))
                     sns_plot.set_yticklabels(sns_plot.get_yticklabels(), rotation=0, fontsize=8)
-                    fig.savefig('flaskr/static/thumbnail_current_correct_qapair' + str(i) + '_' + str(idx) + '.png',
-                                bbox_inches='tight')
+                    fig.savefig(
+                        'flaskr/static/thumbnail_current_correct_qapair' + str(pair_num) + '_' + str(idx) + '.png',
+                        bbox_inches='tight')
                     plt.close()
         if len(wrong_answers) > 0:
             for idx in range(0, len(wa_tokens)):
                 already_exists = [False, False]
                 path = "flaskr/static/"
                 for filename in os.listdir(path):
-                    if 'current_wrong_qapair' + str(i) + '_' + str(idx) + '.png' in filename:
+                    if 'current_wrong_qapair' + str(pair_num) + '_' + str(idx) + '.png' in filename:
                         already_exists[0] = True
                         print(filename, 'already exists')
-                    if 'thumbnail_current_wrong_qapair' + str(i) + '_' + str(idx) + '.png' in filename:
+                    if 'thumbnail_current_wrong_qapair' + str(pair_num) + '_' + str(idx) + '.png' in filename:
                         already_exists[1] = True
                         print(filename, 'already exists')
                     if already_exists[1] and already_exists[0]:
@@ -388,7 +458,7 @@ def pair(i):
                                                cmap=sns.diverging_palette(220, 20, n=7))
                         sns_plot.set_yticklabels(sns_plot.get_yticklabels(), rotation=0, fontsize=8)
                         fig.savefig(
-                            'flaskr/static/current_wrong_qapair' + str(i) + '_' + str(idx) + '_chunk_' + str(
+                            'flaskr/static/current_wrong_qapair' + str(pair_num) + '_' + str(idx) + '_chunk_' + str(
                                 j) + '.png',
                             bbox_inches='tight')
                         plt.close()
@@ -399,8 +469,9 @@ def pair(i):
                                            yticklabels=words,
                                            cmap=sns.diverging_palette(220, 20, n=7))
                     sns_plot.set_yticklabels(sns_plot.get_yticklabels(), rotation=0, fontsize=8)
-                    fig.savefig('flaskr/static/thumbnail_current_wrong_qapair' + str(i) + '_' + str(idx) + '.png',
-                                bbox_inches='tight')
+                    fig.savefig(
+                        'flaskr/static/thumbnail_current_wrong_qapair' + str(pair_num) + '_' + str(idx) + '.png',
+                        bbox_inches='tight')
                     plt.close()
 
     # generate text highlighting based on neuron activity
@@ -417,8 +488,12 @@ def pair(i):
     return render_template('visualization_qapair.html', question=question,
                            highlighted_wrong_answers=highlighted_wrong_answers,
                            highlighted_correct_answers=highlighted_correct_answers,
-                           wrong_answers=wrong_answers, correct_answers=correct_answers, i=i, neuron_num=neuron_num,
+                           wrong_answers=wrong_answers, correct_answers=correct_answers, i=pair_num,
+                           neuron_num=neuron_num,
                            neuron_display_ca=session['neuron_display_ca'],
                            neuron_display_wa=session['neuron_display_wa'], scale=session['scale'],
                            texts_len=len(qa_pairs),
-                           scores_ca=scores_ca, scores_wa=scores_wa)
+                           scores_ca=scores_ca, scores_wa=scores_wa,
+                           # plotly
+                           plotly_tsne=plotly_tsne
+                           )

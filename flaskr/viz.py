@@ -51,8 +51,6 @@ def setup():
     global model
     if not model:
         model = load_environment()
-        print('loaded environment')
-        print('model:', model)
 
 
 def load_environment():
@@ -62,7 +60,6 @@ def load_environment():
     global model, cos_qa, model_filename
     global current_loaded
     global qa_pairs, answer_texts
-    print("Loading keras visualization setup")
 
     with open('flaskr/tokenizer.p', 'rb') as handle:
         tokenizer = pickle.load(handle)
@@ -94,11 +91,8 @@ def load_model(new_model_filename):
         model = model_from_json(loaded_model_json)
         global graph
         graph = tf.get_default_graph()
-        print("\tLoaded model structure from disk")
         # load weights into new model
         model.load_weights("out/data/semeval/models/" + new_model_filename + ".h5")
-        print("\tLoaded model weights from disk")
-        print("Loaded model from disk")
         model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
         model_filename = new_model_filename
         return model
@@ -190,7 +184,6 @@ def highlight_neuron(rnn_values, texts, tokens, scale, neuron):
 @bp.route('/neuron/<int:neuron>', strict_slashes=False, methods=['GET', 'POST'])
 def display_neuron(neuron):
     global answer_texts, qa_pairs, vocabulary_inv, model
-    print('after loading: ', model)
 
     # Parameters
     if 'random' in session.keys():
@@ -272,7 +265,6 @@ def display_neuron(neuron):
     all_highlighted_wrong_answers = []
     all_wrong_answers = []
 
-    print('indices', session['indices'])
     min_ca = 1
     min_wa = 1
     max_ca = -1
