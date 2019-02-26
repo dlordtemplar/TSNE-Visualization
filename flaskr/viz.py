@@ -33,19 +33,20 @@ bp._before_request_lock = Lock()
 bp._got_first_request = False
 
 
-@bp.before_request
-def init():
-    if bp._got_first_request:
-        return
-    with bp._before_request_lock:
-        if bp._got_first_request:
-            return
-        bp._got_first_request = True
+# @bp.before_request
+# def init():
+#     if bp._got_first_request:
+#         return
+#     with bp._before_request_lock:
+#         if bp._got_first_request:
+#             return
+#         bp._got_first_request = True
+#
+#         # first request, execute what you need.
+#         setup()
 
-        # first request, execute what you need.
-        setup()
 
-
+@bp.before_app_first_request
 def setup():
     global model
     if not model:
@@ -148,8 +149,6 @@ def visualize_model_deep(model, question_lstm=True):
     else:
         outputs.append(recurrent_layer.get_output_at(0))
 
-    print('inputs', inputs)
-    print('outputs', outputs)
     global graph
     with graph.as_default():
         all_function = K.function(inputs, outputs)

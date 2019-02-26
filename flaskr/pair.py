@@ -1,13 +1,12 @@
-import pickle
-import random
 import math
+import os
+import pickle
 from threading import Lock
 
 # plotting settings, TODO: delete later
 import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
-import os
 
 sns.set()
 matplotlib.style.use('ggplot')
@@ -47,19 +46,20 @@ bp._before_request_lock = Lock()
 bp._got_first_request = False
 
 
-@bp.before_request
-def init():
-    if bp._got_first_request:
-        return
-    with bp._before_request_lock:
-        if bp._got_first_request:
-            return
-        bp._got_first_request = True
+# @bp.before_app_first_request
+# def init():
+#     if bp._got_first_request:
+#         return
+#     with bp._before_request_lock:
+#         if bp._got_first_request:
+#             return
+#         bp._got_first_request = True
+#
+#         # first request, execute what you need.
+#         setup()
 
-        # first request, execute what you need.
-        setup()
 
-
+@bp.before_app_first_request
 def setup():
     global model
     if not model:
@@ -162,8 +162,10 @@ def visualize_model_deep(model, question_lstm=True):
     else:
         outputs.append(recurrent_layer.get_output_at(0))
 
-    all_function = K.function(inputs, outputs)
-    output_function = K.function([output_layer.input], model.outputs)
+    global graph
+    with graph.as_default():
+        all_function = K.function(inputs, outputs)
+        output_function = K.function([output_layer.input], model.outputs)
     return all_function, output_function
 
 
@@ -197,7 +199,7 @@ def highlight_neuron(rnn_values, texts, tokens, scale, neuron):
     return texts
 
 
-# TODO: delete
+# TODO: just use the points, but remove the matplotlib drawing+saving
 def tsne_plot(i, model, labels, perplexity=40):
     """Creates a TSNE model and plots it"""
     tokens = []
@@ -221,7 +223,8 @@ def tsne_plot(i, model, labels, perplexity=40):
     y = np.array(y)
     fig = plt.figure(figsize=(6, 6))
     plt.scatter(x, y, c=num_labels, cmap=cmap)
-    fig.savefig('flaskr/static/tsne_semeval_siamese_current_qapair' + str(i) + '_' + str(perplexity) + '.png', bbox_inches='tight')
+    fig.savefig('flaskr/static/tsne_semeval_siamese_current_qapair' + str(i) + '_' + str(perplexity) + '.png',
+                bbox_inches='tight')
     plt.close()
 
 
@@ -345,7 +348,8 @@ def pair(i):
                                                xticklabels=range(j, j + chunk_size))
                         sns_plot.set_yticklabels(sns_plot.get_yticklabels(), rotation=0, fontsize=8)
                         fig.savefig(
-                            'flaskr/static/current_correct_qapair' + str(i) + '_' + str(idx) + '_chunk_' + str(j) + '.png',
+                            'flaskr/static/current_correct_qapair' + str(i) + '_' + str(idx) + '_chunk_' + str(
+                                j) + '.png',
                             bbox_inches='tight')
                         plt.close()
                 if not already_exists[1]:
@@ -384,7 +388,8 @@ def pair(i):
                                                cmap=sns.diverging_palette(220, 20, n=7))
                         sns_plot.set_yticklabels(sns_plot.get_yticklabels(), rotation=0, fontsize=8)
                         fig.savefig(
-                            'flaskr/static/current_wrong_qapair' + str(i) + '_' + str(idx) + '_chunk_' + str(j) + '.png',
+                            'flaskr/static/current_wrong_qapair' + str(i) + '_' + str(idx) + '_chunk_' + str(
+                                j) + '.png',
                             bbox_inches='tight')
                         plt.close()
                 if not already_exists[1]:
