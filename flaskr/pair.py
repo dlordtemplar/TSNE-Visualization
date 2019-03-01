@@ -247,15 +247,21 @@ def tsne_plot(model, labels, correct_answers, wrong_answers, question, perplexit
 
     marker_blue = {
         'size': 20,
-        'color': 'rgb(0, 0, 255)'
+        'color': 'rgb(0, 0, 255)',
+        # star
+        'symbol': 17
     }
     marker_green = {
         'size': 20,
-        'color': 'rgb(0, 204, 0)'
+        'color': 'rgb(0, 204, 0)',
+        # circle
+        'symbol': 0
     }
     marker_red = {
         'size': 20,
-        'color': 'rgb(255, 0, 0)'
+        'color': 'rgb(255, 0, 0)',
+        # x
+        'symbol': 4
     }
     trace_question = {
         'name': 'Question',
