@@ -1,0 +1,260 @@
+{% extends 'index.html' %}
+
+{% block title %}
+    Question Answer Pairs
+{% endblock %}
+
+{% block script %}
+    <script src="{{ url_for('static', filename = 'plotly-latest.min.js') }}"></script>
+    <script type="text/javascript">
+        var plotly_tsne = {{plotly_tsne | safe}};
+
+        function preloader() {
+            <!-- Draw TSNE chart -->
+            var layout = {
+                showlegend: false,
+                xaxis: {
+                    autorange: true,
+                    zeroline: false,
+                    showline: false
+                },
+                yaxis: {
+                    autorange: true,
+                    zeroline: false,
+                    showline: false
+                }
+            };
+            Plotly.newPlot('pl_tsne', plotly_tsne, layout);
+        }
+
+        window.onload = preloader;
+    </script>
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid" id="content">
+        <div class="row">
+            <div class="col-sm-2"></div>
+            <div class="col-sm-8  text-center">
+                <h2 id="title">Pair {{ pair_num|safe }} / {{ texts_len|safe }}</h2>
+            </div>
+            <div class="col-sm-2"></div>
+        </div>
+        {# TODO: Convert this form submission to AJAX calls #}
+        <form method="POST" class="row top-buffer">
+            <div class="col-sm-3  text-center">
+            </div>
+            <div class="col-sm-6  text-center">
+                <h3>{{ question }}</h3>
+                <div class="form-check form-check-inline" data-toggle="tooltip" data-placement="top"
+                     title="Whether to scale neuron activations to [-1; 1] or not.">
+                    <label class="form-check-label">
+                        <input class="form-check-input" type="checkbox" name="scale" value="scale" {% if scale %}
+                               checked {% endif %}> Scale neuron activations
+                    </label>
+                    <input type="submit" value="Submit" class="btn ml-2 btn-sm">
+                </div>
+            </div>
+            <div class="col-sm-3  text-center">
+            </div>
+            <div class="col-sm-3 ">
+                <h3>Correct answers</h3>
+
+                <p>
+                <div class="form-group">
+                    <label for="neuron_num_ca" class="control-label">Number of the neuron</label>
+                    <select class="form-control" id="neuron_num_ca" name="neuron_num_ca" onchange="this.form.submit()">
+                        <option value=None {% if neuron_display_ca==
+                       'None' %} selected {% endif %}>None
+                        </option>
+                        {% for idx in range(neuron_num) %}
+
+                            <option value={{ idx }} {% if neuron_display_ca== idx %} selected {% endif %}>{{ idx }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                </p>
+
+                {% for correct_answer in highlighted_correct_answers %}
+                    <div class="card mt-1">
+                        <div class="card-block">
+                            <p class="card-text">{{ correct_answer|safe }}</p>
+                            <div class="card-footer text-muted">Score: {{ scores_ca[loop.index0][0]|round(2) }}
+                                {% if scores_ca[loop.index0][0] > 0.5 %}
+                                    <i class="far fa-check-circle" style="color:green;"
+                                       title="Correctly classified as a correct answer"></i> {% else %}
+                                    <i class="far fa-times-circle" style="color:red;"
+                                       title="Incorrectly classified as a wrong answer"></i> {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="col-sm-6  text-center" style="display: flex;">
+                <div class="row">
+                    <div class="col-sm-12">
+                        <figure class="figure">
+                            <div class="row" id="pl_tsne"></div>
+                            <figcaption class="figure-caption">t-SNE plot. Perplexity: {{ session['perplexity'] }}.
+                                Question is blue, ground truth correct answers are green and ground truth wrong answers
+                                are red.
+                            </figcaption>
+                        </figure>
+                        <div class="form-group row">
+                            <div class="col-sm-4">
+                            </div>
+                            <div class="col-sm-4">
+                                <label for="perplexity">Change perplexity value:</label>
+                                <input type="text" class="form-control" id="perplexity" name="perplexity"
+                                       aria-describedby="perplexity" placeholder="recommended: 5 to 50. default: 5">
+                                <input type="submit" value="Plot" class="btn btn-sm" onclick=loading();>
+                            </div>
+                            <div class="col-sm-4">
+                            </div>
+                        </div>
+                    </div>
+                    <hr class='col-sm-8'>
+
+                    <div class="row">
+                        {% for idx in range(pl_ca_heatmaps|length) %}
+                            <div id="pl_ca_{{ idx }}">
+                            </div>
+                            {# TODO: move this into top script #}
+                            <script type="text/javascript">
+                                var pl_ca_heatmaps = {{ pl_ca_heatmaps|safe }};
+                                Plotly.newPlot('pl_ca_' + {{ idx }}, [pl_ca_heatmaps[{{ idx }}]], {});
+                            </script>
+                        {% endfor %}
+                    </div>
+
+                    <div class="row">
+                        {% for idx in range(correct_answers|length) %}
+                            <div class="col-lg-3 col-md-4 col-xs-6">
+                                <!-- Button trigger modal -->
+                                <img class="img-fluid" src='{{ url_for('static', filename='thumbnail_current_correct_qapair' + pair_num|string + '_' +
+                            idx|string +'.png') }}' alt='A neuron activation heatmap for the correct answer #{{ idx }}'>
+                                <button type="button" class="btn" data-toggle="modal" data-target="#modal_ca_{{ idx }}">
+                                    Zoom
+                                </button>
+
+                                <!-- Modal -->
+                                <div class="modal fade" id="modal_ca_{{ idx }}" tabindex="-1" role="dialog"
+                                     aria-labelledby="modal_ca_{{ idx }}_title" aria-hidden="true">
+                                    <div class="modal-dialog custom-class" role="document">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="modal_ca_{{ idx }}_title">Neuron Activation
+                                                    Hatmap</h5>
+                                                <button type="button" class="close" data-dismiss="modal"
+                                                        aria-label="Close">
+                                                    <span aria-hidden="true">&times;</span>
+                                                </button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p>The warm colors correspond to positive values, and the cold ones - to
+                                                    negative.<br> The more intense the color, the higher the absolute
+                                                    value.<br> The plots are divided into chunks of 32 neurons for
+                                                    better visibility.</p>
+                                                <p class="lead">«{{ correct_answers[idx] }}»</p>
+                                                {% for j in range(0, neuron_num, 32) %}
+                                                    <img src='{{ url_for('static', filename='current_correct_qapair' + pair_num|string + '_' + idx|string +
+                                           '_chunk_'+ j|string +'.png') }}'> {% endfor %}
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn" data-dismiss="modal">Close</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                            </div>{% endfor %}
+
+                    </div>
+                    <hr class='col-sm-8'>
+
+                    <div class="row">
+                        {% for idx in range(wrong_answers|length) %}
+                            <div class="col-lg-3 col-md-4 col-xs-6">
+                                <!-- Button trigger modal -->
+                                <img class="img-fluid" src='{{ url_for('static', filename='thumbnail_current_wrong_qapair' + pair_num|string + '_' +
+                            idx|string +'.png') }}' alt='A neuron activation heatmap for the wrong answer #{{ idx }}'>
+                                <button type="button" class="btn" data-toggle="modal" data-target="#modal_wa_{{ idx }}">
+                                    Zoom
+                                </button>
+
+                                <!-- Modal -->
+                                <div class="modal fade" id="modal_wa_{{ idx }}" tabindex="-1" role="dialog"
+                                     aria-labelledby="modal_wa_{{ idx }}_title" aria-hidden="true">
+                                    <div class="modal-dialog custom-class" role="document">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="modal_wa_{{ idx }}_title">Neuron Activation
+                                                    Heatmap</h5>
+                                                <button type="button" class="close" data-dismiss="modal"
+                                                        aria-label="Close">
+                                                    <span aria-hidden="true">&times;</span>
+                                                </button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p>The warm colors correspond to positive values, and the cold ones - to
+                                                    negative. <br>The more intense the color, the higher the absolute
+                                                    value. <br>The plots are divided into chunks of 32 neurons for
+                                                    better visibility.</p>
+
+                                                <p class="lead">«{{ wrong_answers[idx] }}»</p>
+                                                {% for j in range(0, neuron_num, 32) %}
+                                                    <img src='{{ url_for('static', filename='current_wrong_qapair' + pair_num|string + '_' + idx|string +
+                                           '_chunk_'+ j|string +'.png') }}'> {% endfor %}
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn" data-dismiss="modal">Close</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                            </div>{% endfor %}
+                    </div>
+                </div>
+
+            </div>
+            <div class="col-sm-3">
+                <h3>Wrong answers</h3>
+
+
+                <p>
+                <div class="form-group">
+                    <label for="neuron_num_wa" class="control-label">Number of the neuron</label>
+                    <select class="form-control" id="neuron_num_wa" name="neuron_num_wa" onchange="this.form.submit()">
+                        <option {% if neuron_display_wa==
+                       'None' %} selected {% endif %}>None
+                        </option>
+                        {% for idx in range(neuron_num) %}
+
+                            <option value={{ idx }} {% if neuron_display_wa== idx %} selected {% endif %}>{{ idx }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                </p>
+
+                {% for wrong_answer in highlighted_wrong_answers %}
+                    <div class="card mt-1">
+                        <div class="card-block">
+                            <p class="card-text">{{ wrong_answer|safe }}</p>
+                            <div class="card-footer text-muted">Score: {{ scores_wa[loop.index0][0]|round(2) }}
+                                {% if scores_wa[loop.index0][0] > 0.5 %}
+                                    <i class="far fa-check-circle" style="color:green;"
+                                       title="Incorrectly classified as a correct answer"></i> {% else %}
+                                    <i class="far fa-times-circle" style="color:red;"
+                                       title="Correctly classified as a wrong answer"></i> {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </form>
+    </div>
+    </div>
+{% endblock %}
