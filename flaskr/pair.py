@@ -309,6 +309,9 @@ def tsne_plot(model, labels, correct_answers, wrong_answers, question, perplexit
 def pair(pair_num):
     global answer_texts, qa_pairs, vocabulary_inv, model
 
+    if pair_num >= len(qa_pairs):
+        return 'Index out of bounds.'
+
     row = qa_pairs.iloc[pair_num]
     correct_answers = answer_texts.loc[row['answer_ids']]['answer'].values
     wrong_answers = answer_texts.loc[row['pool']]['answer'].values
