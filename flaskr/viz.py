@@ -443,7 +443,7 @@ def display_neuron(neuron):
     antiactivated_words = [x for x in antiactivated_words if not (x in seen or seen.add(x))]
     asked_questions = qa_pairs['question']
 
-    return render_template('viz_neuron.html',
+    return render_template('neuron.html',
                            neuron=neuron,
                            neuron_num=neuron_num, random=session['random'], indices=session['indices'],
                            scale=session['scale'], activated_words=activated_words,

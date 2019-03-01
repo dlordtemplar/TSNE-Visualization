@@ -199,27 +199,17 @@ def highlight_neuron(rnn_values, texts, tokens, scale, neuron):
     return texts
 
 
-# TODO: just use the points, but remove the matplotlib drawing+saving
-def tsne_plot(pair_num, model, labels, perplexity=40):
+def tsne_plot(model, labels, correct_answers, wrong_answers, question, perplexity=40):
     """Creates a TSNE model and plots it"""
-    cmap = matplotlib.colors.ListedColormap(['red', 'green', 'blue'])
-    # TODO: Move out to global var
-    num_labels_dict = {'ca': 1, 'wa': 0, 'q': 3}
-    num_labels = np.array([num_labels_dict[x] for x in labels])
+
     tokens = []
     for word in model.keys():
         tokens.append(model[word])
 
     tsne_model = TSNE(perplexity=perplexity, n_components=2, init='pca', n_iter=2500, random_state=23,
                       metric="cosine")
+    # list of x y values in format (x, y)
     new_values = tsne_model.fit_transform(tokens)
-
-    # TODO: delete
-    x = []
-    y = []
-    for value in new_values:
-        x.append(value[0])
-        y.append(value[1])
 
     trace_question_x = []
     trace_ca_x = []
@@ -230,20 +220,30 @@ def tsne_plot(pair_num, model, labels, perplexity=40):
     trace_question_text = []
     trace_ca_text = []
     trace_wa_text = []
+    trace_question_hovertext = []
+    trace_ca_hovertext = []
+    trace_wa_hovertext = []
 
+    ca_index = 0
+    wa_index = 0
     for label_index in range(len(labels)):
         if labels[label_index] == 'q':
             trace_question_x.append(new_values[label_index][0])
             trace_question_y.append(new_values[label_index][1])
             trace_question_text.append('Q')
+            trace_question_hovertext.append(question)
         elif labels[label_index] == 'ca':
             trace_ca_x.append(new_values[label_index][0])
             trace_ca_y.append(new_values[label_index][1])
             trace_ca_text.append('CA' + str(len(trace_ca_x)))
+            trace_ca_hovertext.append(correct_answers[ca_index])
+            ca_index += 1
         elif labels[label_index] == 'wa':
             trace_wa_x.append(new_values[label_index][0])
             trace_wa_y.append(new_values[label_index][1])
             trace_wa_text.append('WA' + str(len(trace_wa_x)))
+            trace_wa_hovertext.append(wrong_answers[wa_index])
+            wa_index += 1
 
     marker_blue = {
         'size': 20,
@@ -263,7 +263,8 @@ def tsne_plot(pair_num, model, labels, perplexity=40):
         'y': trace_question_y,
         'type': 'scatter',
         'mode': 'markers+text',
-        'hoverinfo': 'name',
+        'hoverinfo': 'text',
+        'hovertext': trace_question_hovertext,
         'text': trace_question_text,
         'textposition': 'top right',
         'marker': marker_blue
@@ -274,7 +275,8 @@ def tsne_plot(pair_num, model, labels, perplexity=40):
         'y': trace_ca_y,
         'type': 'scatter',
         'mode': 'markers+text',
-        'hoverinfo': 'name',
+        'hoverinfo': 'text',
+        'hovertext': trace_ca_hovertext,
         'text': trace_ca_text,
         'textposition': 'top right',
         'marker': marker_green
@@ -285,21 +287,13 @@ def tsne_plot(pair_num, model, labels, perplexity=40):
         'y': trace_wa_y,
         'type': 'scatter',
         'mode': 'markers+text',
-        'hoverinfo': 'name',
+        'hoverinfo': 'text',
+        'hovertext': trace_wa_hovertext,
         'text': trace_wa_text,
         'textposition': 'top right',
         'marker': marker_red
     }
     plotly_tsne = [trace_question, trace_ca, trace_wa]
-
-    # TODO: delete
-    x = np.array(x)
-    y = np.array(y)
-    fig = plt.figure(figsize=(6, 6))
-    plt.scatter(x, y, c=num_labels, cmap=cmap)
-    fig.savefig('flaskr/static/tsne_semeval_siamese_current_qapair' + str(pair_num) + '_' + str(perplexity) + '.png',
-                bbox_inches='tight')
-    plt.close()
 
     return plotly_tsne
 
@@ -387,7 +381,7 @@ def pair(pair_num):
         _, rnn_values = all_function_deep_q([q_padded_tokens, [ca_padded_tokens[0]]])
         question_vector = rnn_values[0]
         model_dict[0] = np.max(question_vector, axis=1)
-        plotly_tsne = tsne_plot(pair_num, model_dict, labels, session['perplexity'])
+        plotly_tsne = tsne_plot(model_dict, labels, correct_answers, wrong_answers, question, session['perplexity'])
 
     # plotly
     pl_ca_heatmaps = []
@@ -505,10 +499,10 @@ def pair(pair_num):
         highlighted_wrong_answers = highlight_neuron(rnn_values_wa, wrong_answers, wa_tokens, session['scale'],
                                                      session['neuron_display_wa'])
 
-    return render_template('visualization_qapair.html', question=question,
+    return render_template('pair.html', question=question,
                            highlighted_wrong_answers=highlighted_wrong_answers,
                            highlighted_correct_answers=highlighted_correct_answers,
-                           wrong_answers=wrong_answers, correct_answers=correct_answers, i=pair_num,
+                           wrong_answers=wrong_answers, correct_answers=correct_answers, pair_num=pair_num,
                            neuron_num=neuron_num,
                            neuron_display_ca=session['neuron_display_ca'],
                            neuron_display_wa=session['neuron_display_wa'], scale=session['scale'],
