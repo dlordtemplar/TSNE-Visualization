@@ -1,7 +1,12 @@
+.fullscreen {
+    padding: 12px;
+}
+
 .modal-dialog {
     width: auto;
     height: 100%;
-    max-width: 750px;
+    max-width: none;
+    margin: 0;
 }
 
 .card-text {

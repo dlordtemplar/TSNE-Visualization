@@ -40,28 +40,66 @@
             Plotly.newPlot(div_id_partial + index, data, layout, {staticPlot: isStatic});
         }
 
-        var pl_ca_heatmaps = {{ pl_ca_heatmaps|safe }}
+        var pl_ca_heatmaps = {{ pl_ca_heatmaps|safe }};
+        var pl_wa_heatmaps = {{ pl_wa_heatmaps|safe }};
+        var drawn = {};
 
-            function preloader() {
-                <!-- Draw TSNE chart -->
-                var layout = {
-                    showlegend: false,
-                    xaxis: {
-                        autorange: true,
-                        zeroline: false,
-                        showline: false
-                    },
-                    yaxis: {
-                        autorange: true,
-                        zeroline: false,
-                        showline: false
-                    }
-                };
-                Plotly.newPlot('pl_tsne', plotly_tsne, layout);
-
-            }
+        function preloader() {
+            <!-- Draw TSNE chart -->
+            var layout = {
+                showlegend: false,
+                xaxis: {
+                    autorange: true,
+                    zeroline: false,
+                    showline: false
+                },
+                yaxis: {
+                    autorange: true,
+                    zeroline: false,
+                    showline: false
+                }
+            };
+            Plotly.newPlot('pl_tsne', plotly_tsne, layout);
+        }
 
         window.onload = preloader;
+
+        <!-- Full charts are drawn when shown to reduce page slowdown on load -->
+        $(window).on('show.bs.modal', function (e) {
+            var splitId = e.relatedTarget.id.split('_');
+            var caOrWa = splitId[0];
+            var idx = splitId[2];
+
+            if (!(caOrWa + idx in drawn)) {
+                // Draw modal chart as a fully functional chart
+                var layout = {
+                    'width': $(window).width() - 58
+                };
+
+                var currentPlot = [];
+                if (caOrWa === 'ca') {
+                    currentPlot = [pl_ca_heatmaps[idx]];
+                } else if (caOrWa === 'wa') {
+                    currentPlot = [pl_wa_heatmaps[idx]];
+                }
+
+                var words = currentPlot[0].y;
+                currentPlot[0].text = words;
+
+                // TODO: Strip fakeUniqueWord values from workaround in hover tooltip
+                // Hiding "x" values from tooltip here as they are all 0.
+                // This method below did not work for me.
+                // https://stackoverflow.com/questions/41128318/is-it-possible-to-change-text-in-hover-tool-tip-for-plotlyjs-bubble-chart
+                currentPlot[0].hoverinfo = 'x+y+z';
+
+                // Increase chart height for long sentences
+                if (words.length > 10) {
+                    layout.height = 700 + words.length * 10;
+                }
+                drawChart(caOrWa + '_modal_', idx, currentPlot, layout, false);
+                drawn[caOrWa + idx] = 1;
+            }
+        });
     </script>
 {% endblock %}
 
@@ -111,7 +149,6 @@
                                 <option value=None {% if neuron_display_ca=='None' %} selected {% endif %}>None
                                 </option>
                                 {% for idx in range(neuron_num) %}
-
                                     <option value={{ idx }} {% if neuron_display_ca== idx %} selected {% endif %}>{{ idx }}</option>
                                 {% endfor %}
                             </select>
@@ -120,10 +157,10 @@
                 </div>
                 </p>
 
-                {% for correct_answer in highlighted_correct_answers %}
+                {% for idx in range(highlighted_correct_answers|length) %}
                     <div class="card mt-1">
                         <div class="card-block">
-                            <p class="card-text">{{ correct_answer|safe }}</p>
+                            <p class="card-text">{{ highlighted_correct_answers[idx]|safe }}</p>
                             <div class="card-footer">
                                 <div class="row">
                                     <div class="col-8 text-left">
@@ -141,7 +178,35 @@
                                         </span>
                                     </div>
                                     <div class="col-4 text-right">
-                                        <button type="button" class="btn btn-link btn-sm heatmap-btn">Heatmap</button>
+                                        <button type="button" class="btn btn-link btn-sm heatmap-btn"
+                                                data-toggle="modal"
+                                                data-target="#modal_ca_{{ idx }}"
+                                                id="ca_btn_{{ idx }}">
+                                            Heatmap
+                                        </button>
+                                    </div>
+
+                                    <!-- Modal -->
+                                    <div class="modal fade fullscreen" id="modal_ca_{{ idx }}" tabindex="-1" role="dialog"
+                                         aria-labelledby="modal_ca_{{ idx }}_title" aria-hidden="true">
+                                        <div class="modal-dialog custom-class" role="document">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Neuron
+                                                        Activation
+                                                        Heatmap</h5>
+                                                    <button type="button" class="close" data-dismiss="modal"
+                                                            aria-label="Close">
+                                                        <span aria-hidden="true">&times;</span>
+                                                    </button>
+                                                </div>
+                                                <div class="modal-body text-center">
+                                                    <p class="lead">{{ correct_answers[idx] }}</p>
+                                                    <div class="pl_chart" id="ca_modal_{{ idx }}">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -192,8 +257,9 @@
                         {% for idx in range(correct_answers|length) %}
                             <div class="col-lg-3 col-md-4 col-xs-6">
                                 <!-- Button trigger modal -->
-                                <img class="img-fluid" src='{{ url_for('static', filename='thumbnail_current_correct_qapair' + pair_num|string + '_' +
-                            idx|string +'.png') }}' alt='A neuron activation heatmap for the correct answer #{{ idx }}'>
+                                <img class="img-fluid"
+                                     src='{{ url_for('static', filename='thumbnail_current_correct_qapair' + pair_num|string + '_' + idx|string +'.png') }}'
+                                     alt='A neuron activation heatmap for the correct answer #{{ idx }}'>
                                 <button type="button" class="btn" data-toggle="modal" data-target="#modal_ca_{{ idx }}">
                                     Zoom
                                 </button>
@@ -220,9 +286,6 @@
                                                 {% for j in range(0, neuron_num, 32) %}
                                                     <img src='{{ url_for('static', filename='current_correct_qapair' + pair_num|string + '_' + idx|string +
                                            '_chunk_'+ j|string +'.png') }}'> {% endfor %}
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn" data-dismiss="modal">Close</button>
                                             </div>
                                         </div>
                                     </div>
