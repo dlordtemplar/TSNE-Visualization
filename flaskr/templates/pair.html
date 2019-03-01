@@ -161,7 +161,10 @@
                 {% for idx in range(highlighted_correct_answers|length) %}
                     <div class="card mt-1">
                         <div class="card-block">
-                            <p class="card-text">{{ highlighted_correct_answers[idx]|safe }}</p>
+                            <p class="card-text">
+                                <b>CA{{ idx + 1 }}:</b>
+                                {{ highlighted_correct_answers[idx]|safe }}
+                            </p>
                             <div class="card-footer">
                                 <div class="row">
                                     <div class="col-8 text-left">
@@ -175,7 +178,7 @@
                                             {% endif %}
                                         </span>
                                         <span class="text-muted">
-                                            Score: {{ scores_ca[loop.index0][0]|round(2) }}
+                                            {{ scores_ca[loop.index0][0]|round(2) }}
                                         </span>
                                     </div>
                                     <div class="col-4 text-right">
@@ -220,7 +223,10 @@
                 <div class="row">
                     <figure class="figure w-100">
                         <div class="row" id="pl_tsne"></div>
-                        <figcaption class="figure-caption">t-SNE plot. Perplexity: {{ session['perplexity'] }}
+                        <figcaption class="figure-caption">
+                            t-SNE plot. Perplexity: {{ session['perplexity'] }}
+                            <br/>
+                            Values shown above are ground truths.
                         </figcaption>
                     </figure>
                 </div>
@@ -266,21 +272,24 @@
                 {% for idx in range(highlighted_wrong_answers|length) %}
                     <div class="card mt-1">
                         <div class="card-block">
-                            <p class="card-text">{{ highlighted_wrong_answers[idx]|safe }}</p>
+                            <p class="card-text">
+                                <b>WA{{ idx + 1 }}:</b>
+                                {{ highlighted_wrong_answers[idx]|safe }}
+                            </p>
                             <div class="card-footer">
                                 <div class="row">
                                     <div class="col-8 text-left">
                                         <span>
                                             {% if scores_wa[loop.index0][0] > 0.5 %}
-                                                <i class="fa fa-check-circle wrong-marked-correct"
+                                                <i class="fa fa-times-circle wrong-marked-wrong"
                                                    title="Incorrectly classified as a correct answer"></i>
                                             {% else %}
-                                                <i class="fa fa-times-circle wrong-marked-wrong"
+                                                <i class="fa fa-check-circle wrong-marked-correct"
                                                    title="Correctly classified as a wrong answer"></i>
                                             {% endif %}
                                         </span>
                                         <span class="text-muted">
-                                            Score: {{ scores_wa[loop.index0][0]|round(2) }}
+                                            {{ scores_wa[loop.index0][0]|round(2) }}
                                         </span>
                                     </div>
                                     <div class="col-4 text-right">
