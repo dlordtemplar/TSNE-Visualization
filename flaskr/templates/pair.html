@@ -5,27 +5,61 @@
 {% endblock %}
 
 {% block script %}
+    <link href="{{ url_for('static', filename = 'pair.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css"
+          integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
     <script src="{{ url_for('static', filename = 'plotly-latest.min.js') }}"></script>
     <script type="text/javascript">
         var plotly_tsne = {{plotly_tsne | safe}};
 
-        function preloader() {
-            <!-- Draw TSNE chart -->
-            var layout = {
-                showlegend: false,
-                xaxis: {
-                    autorange: true,
-                    zeroline: false,
-                    showline: false
-                },
-                yaxis: {
-                    autorange: true,
-                    zeroline: false,
-                    showline: false
+        // plot.ly doesn't support duplicate axis labels currently, but we need them to make charts more legible.
+        // https://github.com/plotly/plotly.js/issues/1516
+        // ticktext/tickvals method didn't work when I tried, so this method is used to create fake unique words.
+        // A side effect of this is that hover text now needs to be stripped of this whitespace.
+        function createFakeUniqueWords(word_array) {
+            var fakeUniqueWords = Array(word_array.length)
+            var usedWords = {};
+            for (var q = 0; q < word_array.length; q++) {
+                if (word_array[q] in usedWords) {
+                    var fakeWord = word_array[q];
+                    for (var k = 0; k < usedWords[word_array[q]]; k++) {
+                        // "Unique" words just prefix the word with spaces
+                        fakeWord = ' ' + fakeWord;
+                    }
+                    fakeUniqueWords[q] = fakeWord;
+                    usedWords[word_array[q]] += 1;
+                } else {
+                    fakeUniqueWords[q] = word_array[q];
+                    usedWords[word_array[q]] = 1;
                 }
-            };
-            Plotly.newPlot('pl_tsne', plotly_tsne, layout);
+            }
+            return fakeUniqueWords
         }
+
+        function drawChart(div_id_partial, index, data, layout, isStatic) {
+            Plotly.newPlot(div_id_partial + index, data, layout, {staticPlot: isStatic});
+        }
+
+        var pl_ca_heatmaps = {{ pl_ca_heatmaps|safe }}
+
+            function preloader() {
+                <!-- Draw TSNE chart -->
+                var layout = {
+                    showlegend: false,
+                    xaxis: {
+                        autorange: true,
+                        zeroline: false,
+                        showline: false
+                    },
+                    yaxis: {
+                        autorange: true,
+                        zeroline: false,
+                        showline: false
+                    }
+                };
+                Plotly.newPlot('pl_tsne', plotly_tsne, layout);
+
+            }
 
         window.onload = preloader;
     </script>
@@ -40,38 +74,49 @@
             </div>
             <div class="col-sm-2"></div>
         </div>
+
         {# TODO: Convert this form submission to AJAX calls #}
         <form method="POST" class="row top-buffer">
             <div class="col-sm-3  text-center">
             </div>
             <div class="col-sm-6  text-center">
                 <h3>{{ question }}</h3>
-                <div class="form-check form-check-inline" data-toggle="tooltip" data-placement="top"
+                <div class="form-check form-check-inline align-items-center" data-toggle="tooltip" data-placement="top"
                      title="Whether to scale neuron activations to [-1; 1] or not.">
+                    <input class="form-check-input form-check-inline" type="checkbox" name="scale" value="scale"
+                            {% if scale %}
+                           checked {% endif %}> Scale neuron activations
                     <label class="form-check-label">
-                        <input class="form-check-input" type="checkbox" name="scale" value="scale" {% if scale %}
-                               checked {% endif %}> Scale neuron activations
                     </label>
                     <input type="submit" value="Submit" class="btn ml-2 btn-sm">
                 </div>
             </div>
             <div class="col-sm-3  text-center">
             </div>
+
+
             <div class="col-sm-3 ">
                 <h3>Correct answers</h3>
 
                 <p>
                 <div class="form-group">
-                    <label for="neuron_num_ca" class="control-label">Number of the neuron</label>
-                    <select class="form-control" id="neuron_num_ca" name="neuron_num_ca" onchange="this.form.submit()">
-                        <option value=None {% if neuron_display_ca==
-                       'None' %} selected {% endif %}>None
-                        </option>
-                        {% for idx in range(neuron_num) %}
+                    <div class="row align-items-center">
+                        <div class="col-4">
+                            <label for="neuron_num_ca" class="control-label my-auto">Neuron #</label>
+                        </div>
+                        <div class="col-8">
+                            <select class="form-control custom-select custom-select-sm" id="neuron_num_ca"
+                                    name="neuron_num_ca"
+                                    onchange="this.form.submit()">
+                                <option value=None {% if neuron_display_ca=='None' %} selected {% endif %}>None
+                                </option>
+                                {% for idx in range(neuron_num) %}
 
-                            <option value={{ idx }} {% if neuron_display_ca== idx %} selected {% endif %}>{{ idx }}</option>
-                        {% endfor %}
-                    </select>
+                                    <option value={{ idx }} {% if neuron_display_ca== idx %} selected {% endif %}>{{ idx }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
                 </div>
                 </p>
 
@@ -79,12 +124,26 @@
                     <div class="card mt-1">
                         <div class="card-block">
                             <p class="card-text">{{ correct_answer|safe }}</p>
-                            <div class="card-footer text-muted">Score: {{ scores_ca[loop.index0][0]|round(2) }}
-                                {% if scores_ca[loop.index0][0] > 0.5 %}
-                                    <i class="far fa-check-circle" style="color:green;"
-                                       title="Correctly classified as a correct answer"></i> {% else %}
-                                    <i class="far fa-times-circle" style="color:red;"
-                                       title="Incorrectly classified as a wrong answer"></i> {% endif %}
+                            <div class="card-footer">
+                                <div class="row">
+                                    <div class="col-8 text-left">
+                                        <span>
+                                            {% if scores_ca[loop.index0][0] > 0.5 %}
+                                                <i class="fa fa-check-circle correct-marked-correct"
+                                                   title="Correctly classified as a correct answer"></i>
+                                            {% else %}
+                                                <i class="fa fa-times-circle correct-marked-wrong"
+                                                   title="Incorrectly classified as a wrong answer"></i>
+                                            {% endif %}
+                                        </span>
+                                        <span class="text-muted">
+                                            Score: {{ scores_ca[loop.index0][0]|round(2) }}
+                                        </span>
+                                    </div>
+                                    <div class="col-4 text-right">
+                                        <button type="button" class="btn btn-link btn-sm heatmap-btn">Heatmap</button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -113,17 +172,19 @@
                             </div>
                         </div>
                     </div>
-                    <hr class='col-sm-8'>
 
                     <div class="row">
+                        <hr class='col-sm-8'>
+                    </div>
+
+                    <div class="row">
+                        <h2>Correct answers</h2>
+                    </div>
+                    <div class="row">
                         {% for idx in range(pl_ca_heatmaps|length) %}
-                            <div id="pl_ca_{{ idx }}">
+                            <div class="col-lg-4">
+                                <div id="pl_ca_thumb_{{ idx }}"></div>
                             </div>
-                            {# TODO: move this into top script #}
-                            <script type="text/javascript">
-                                var pl_ca_heatmaps = {{ pl_ca_heatmaps|safe }};
-                                Plotly.newPlot('pl_ca_' + {{ idx }}, [pl_ca_heatmaps[{{ idx }}]], {});
-                            </script>
                         {% endfor %}
                     </div>
 
@@ -223,19 +284,26 @@
             <div class="col-sm-3">
                 <h3>Wrong answers</h3>
 
-
                 <p>
                 <div class="form-group">
-                    <label for="neuron_num_wa" class="control-label">Number of the neuron</label>
-                    <select class="form-control" id="neuron_num_wa" name="neuron_num_wa" onchange="this.form.submit()">
-                        <option {% if neuron_display_wa==
+                    <div class="row align-items-center">
+                        <div class="col-4">
+                            <label for="neuron_num_wa" class="control-label my-auto">Neuron #</label>
+                        </div>
+                        <div class="col-8">
+                            <select class="form-control custom-select custom-select-sm" id="neuron_num_wa"
+                                    name="neuron_num_wa"
+                                    onchange="this.form.submit()">
+                                <option {% if neuron_display_wa==
                        'None' %} selected {% endif %}>None
-                        </option>
-                        {% for idx in range(neuron_num) %}
+                                </option>
+                                {% for idx in range(neuron_num) %}
 
-                            <option value={{ idx }} {% if neuron_display_wa== idx %} selected {% endif %}>{{ idx }}</option>
-                        {% endfor %}
-                    </select>
+                                    <option value={{ idx }} {% if neuron_display_wa== idx %} selected {% endif %}>{{ idx }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
                 </div>
                 </p>
 
@@ -245,9 +313,9 @@
                             <p class="card-text">{{ wrong_answer|safe }}</p>
                             <div class="card-footer text-muted">Score: {{ scores_wa[loop.index0][0]|round(2) }}
                                 {% if scores_wa[loop.index0][0] > 0.5 %}
-                                    <i class="far fa-check-circle" style="color:green;"
+                                    <i class="far fa-check-circle wrong-marked-correct"
                                        title="Incorrectly classified as a correct answer"></i> {% else %}
-                                    <i class="far fa-times-circle" style="color:red;"
+                                    <i class="far fa-times-circle wrong-marked-wrong"
                                        title="Correctly classified as a wrong answer"></i> {% endif %}
                             </div>
                         </div>

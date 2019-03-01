@@ -5,6 +5,7 @@
 {% endblock %}
 
 {% block script %}
+    <link href="{{ url_for('static', filename = 'neuron.css') }}" rel="stylesheet">
     <script src="{{ url_for('static', filename = 'plotly-latest.min.js') }}"></script>
     <script type="text/javascript">
         // plot.ly doesn't support duplicate axis labels currently, but we need them to make charts more legible.
@@ -37,7 +38,7 @@
         var drawn = {};
 
         function preloader() {
-            <!-- Draw correct answer charts -->
+            <!-- Draw correct answer thumbnail charts -->
             for (var i = 0; i < indices.length; i++) {
                 if (pl_ca_heatmap_points[i] !== undefined) {
                     for (var idx = 0; idx < pl_ca_heatmap_points[i].length; idx++) {
@@ -50,12 +51,12 @@
                         currentPlot[0].y = createFakeUniqueWords(words);
 
                         // Draw thumbnail as a static chart
-                        drawChart(i, idx, currentPlot, 'ca_thumb', {}, true);
+                        drawChart('ca_thumb', i, idx, currentPlot, {}, true);
                     }
                 }
             }
 
-            <!-- Draw wrong answer charts -->
+            <!-- Draw wrong answer thumbnail charts -->
             for (var i = 0; i < indices.length; i++) {
                 if (pl_wa_heatmap_points[i] !== undefined) {
                     for (var idx = 0; idx < pl_wa_heatmap_points[i].length; idx++) {
@@ -68,7 +69,7 @@
                         currentPlot[0].y = createFakeUniqueWords(words);
 
                         // Draw thumbnail as a static chart
-                        drawChart(i, idx, currentPlot, 'wa_thumb', {}, true);
+                        drawChart('wa_thumb', i, idx, currentPlot, {}, true);
                     }
                 }
             }
@@ -76,7 +77,7 @@
 
         window.onload = preloader;
 
-        function drawChart(index, answerNum, data, div_id_partial, layout, isStatic) {
+        function drawChart(div_id_partial, index, answerNum, data, layout, isStatic) {
             Plotly.newPlot(div_id_partial + '_' + index + '_' + answerNum, data, layout, {staticPlot: isStatic});
         }
 
@@ -111,7 +112,7 @@
                 if (words.length > 10) {
                     layout.height = 700 + words.length * 10;
                 }
-                drawChart(i, idx, currentPlot, caOrWa + '_modal', layout, false);
+                drawChart(caOrWa + '_modal', i, idx, currentPlot, layout, false);
                 drawn[caOrWa + i + idx] = 1;
             }
         })
