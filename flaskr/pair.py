@@ -368,26 +368,22 @@ def pair(pair_num):
         if 'scale' not in session.keys():
             session['scale'] = False
 
-    plotly_tsne = []
     # generate TSNE
-    if request.method == 'GET':
-        # TODO: delete
-        already_exists = False
-        path = "flaskr/static/"
-        labels = ['q'] + ['ca'] * len(correct_answers) + ['wa'] * len(wrong_answers)
-        model_dict_wa = {}
-        model_dict_ca = {}
-        if len(correct_answers) > 0:
-            model_dict_ca = {i + 1: np.max(rnn_values_ca[i, :, :], axis=1) for i in range(len(correct_answers))}
-        if len(wrong_answers) > 0:
-            model_dict_wa = {i + 1: np.max(rnn_values_wa[i - len(correct_answers), :, :], axis=1) for i in
-                             range(len(correct_answers), len(wrong_answers) + len(correct_answers))}
-        model_dict = {**model_dict_ca, **model_dict_wa}
-        all_function_deep_q, output_function_deep_q = visualize_model_deep(model, True)
-        _, rnn_values = all_function_deep_q([q_padded_tokens, [ca_padded_tokens[0]]])
-        question_vector = rnn_values[0]
-        model_dict[0] = np.max(question_vector, axis=1)
-        plotly_tsne = tsne_plot(model_dict, labels, correct_answers, wrong_answers, question, session['perplexity'])
+    # if request.method == 'GET':
+    labels = ['q'] + ['ca'] * len(correct_answers) + ['wa'] * len(wrong_answers)
+    model_dict_wa = {}
+    model_dict_ca = {}
+    if len(correct_answers) > 0:
+        model_dict_ca = {i + 1: np.max(rnn_values_ca[i, :, :], axis=1) for i in range(len(correct_answers))}
+    if len(wrong_answers) > 0:
+        model_dict_wa = {i + 1: np.max(rnn_values_wa[i - len(correct_answers), :, :], axis=1) for i in
+                         range(len(correct_answers), len(wrong_answers) + len(correct_answers))}
+    model_dict = {**model_dict_ca, **model_dict_wa}
+    all_function_deep_q, output_function_deep_q = visualize_model_deep(model, True)
+    _, rnn_values = all_function_deep_q([q_padded_tokens, [ca_padded_tokens[0]]])
+    question_vector = rnn_values[0]
+    model_dict[0] = np.max(question_vector, axis=1)
+    plotly_tsne = tsne_plot(model_dict, labels, correct_answers, wrong_answers, question, session['perplexity'])
 
     # plotly
     pl_ca_heatmaps = []
@@ -411,91 +407,7 @@ def pair(pair_num):
                                   'type': 'heatmap'}
                 pl_wa_heatmaps.append(heatmap_points)
 
-        if len(correct_answers) > 0:
-            for idx in range(0, len(ca_tokens)):
-                already_exists = [False, False]
-                path = "flaskr/static/"
-                for filename in os.listdir(path):
-                    if 'current_correct_qapair' + str(pair_num) + '_' + str(idx) + '.png' in filename:
-                        already_exists[0] = True
-                        print(filename, 'already exists')
-                    if 'thumbnail_current_correct_qapair' + str(pair_num) + '_' + str(idx) + '.png' in filename:
-                        already_exists[1] = True
-                        print(filename, 'already exists')
-                    if already_exists[1] and already_exists[0]:
-                        break
-                words = [vocabulary_inv[x] for x in ca_tokens[idx]]
-                if not already_exists[0]:
-                    a4_dims = (math.ceil(0.1 * 1 * neuron_num), math.ceil(1 * 0.1 * len(words)))
-                    chunk_size = 32
-                    for j in range(0, neuron_num, chunk_size):
-                        fig, ax = plt.subplots(figsize=a4_dims)
-                        sns_plot = sns.heatmap(ax=ax,
-                                               data=rnn_values_ca[idx, -len(ca_tokens[idx]):, j:j + chunk_size],
-                                               yticklabels=words,
-                                               cmap=sns.diverging_palette(220, 20, n=7),
-                                               xticklabels=range(j, j + chunk_size))
-                        sns_plot.set_yticklabels(sns_plot.get_yticklabels(), rotation=0, fontsize=8)
-                        fig.savefig(
-                            'flaskr/static/current_correct_qapair' + str(pair_num) + '_' + str(idx) + '_chunk_' + str(
-                                j) + '.png',
-                            bbox_inches='tight')
-                        plt.close()
-                if not already_exists[1]:
-                    a4_dims = (5, 5)
-                    fig, ax = plt.subplots(figsize=a4_dims)
-                    sns_plot = sns.heatmap(ax=ax, data=rnn_values_ca[idx, -len(ca_tokens[idx]):, :],
-                                           yticklabels=words,
-                                           cmap=sns.diverging_palette(220, 20, n=7))
-                    sns_plot.set_yticklabels(sns_plot.get_yticklabels(), rotation=0, fontsize=8)
-                    fig.savefig(
-                        'flaskr/static/thumbnail_current_correct_qapair' + str(pair_num) + '_' + str(idx) + '.png',
-                        bbox_inches='tight')
-                    plt.close()
-        if len(wrong_answers) > 0:
-            for idx in range(0, len(wa_tokens)):
-                already_exists = [False, False]
-                path = "flaskr/static/"
-                for filename in os.listdir(path):
-                    if 'current_wrong_qapair' + str(pair_num) + '_' + str(idx) + '.png' in filename:
-                        already_exists[0] = True
-                        print(filename, 'already exists')
-                    if 'thumbnail_current_wrong_qapair' + str(pair_num) + '_' + str(idx) + '.png' in filename:
-                        already_exists[1] = True
-                        print(filename, 'already exists')
-                    if already_exists[1] and already_exists[0]:
-                        break
-                words = [vocabulary_inv[x] for x in wa_tokens[idx]]
-
-                if not already_exists[0]:
-                    a4_dims = (math.ceil(0.1 * 1 * neuron_num), math.ceil(1 * 0.1 * len(words)))
-                    chunk_size = 32
-                    for j in range(0, neuron_num, chunk_size):
-                        fig, ax = plt.subplots(figsize=a4_dims)
-                        sns_plot = sns.heatmap(ax=ax,
-                                               data=rnn_values_wa[idx, -len(wa_tokens[idx]):, j:j + chunk_size],
-                                               yticklabels=words, xticklabels=range(j, j + chunk_size),
-                                               cmap=sns.diverging_palette(220, 20, n=7))
-                        sns_plot.set_yticklabels(sns_plot.get_yticklabels(), rotation=0, fontsize=8)
-                        fig.savefig(
-                            'flaskr/static/current_wrong_qapair' + str(pair_num) + '_' + str(idx) + '_chunk_' + str(
-                                j) + '.png',
-                            bbox_inches='tight')
-                        plt.close()
-                if not already_exists[1]:
-                    a4_dims = (5, 5)
-                    fig, ax = plt.subplots(figsize=a4_dims)
-                    sns_plot = sns.heatmap(ax=ax, data=rnn_values_wa[idx, -len(wa_tokens[idx]):, :],
-                                           yticklabels=words,
-                                           cmap=sns.diverging_palette(220, 20, n=7))
-                    sns_plot.set_yticklabels(sns_plot.get_yticklabels(), rotation=0, fontsize=8)
-                    fig.savefig(
-                        'flaskr/static/thumbnail_current_wrong_qapair' + str(pair_num) + '_' + str(idx) + '.png',
-                        bbox_inches='tight')
-                    plt.close()
-
     # generate text highlighting based on neuron activity
-
     highlighted_correct_answers = correct_answers
     highlighted_wrong_answers = wrong_answers
     if session['neuron_display_ca'] != 'None':
