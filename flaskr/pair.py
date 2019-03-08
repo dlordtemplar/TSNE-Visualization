@@ -1,15 +1,5 @@
-import math
-import os
 import pickle
 from threading import Lock
-
-# plotting settings, TODO: delete later
-import matplotlib
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-sns.set()
-matplotlib.style.use('ggplot')
 
 import tensorflow as tf
 from flask import (
@@ -22,9 +12,7 @@ from sklearn.manifold import TSNE
 
 from loading_preprocessing_TC import *
 
-sns.set()
-
-bp = Blueprint('qa_pair', __name__)
+bp = Blueprint('pair', __name__)
 MODEL_DIR = 'out/data/semeval/models'
 DATASET_PATH = 'resources/datasets/semeval/train/'
 

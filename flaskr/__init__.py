@@ -30,8 +30,8 @@ def create_app(test_config=None):
     from . import common
     app.register_blueprint(common.bp)
 
-    from . import viz
-    app.register_blueprint(viz.bp)
+    from . import neuron
+    app.register_blueprint(neuron.bp)
 
     from . import pair
     app.register_blueprint(pair.bp)

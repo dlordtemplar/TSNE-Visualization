@@ -12,7 +12,7 @@ from keras.preprocessing.sequence import pad_sequences
 
 from loading_preprocessing_TC import *
 
-bp = Blueprint('viz', __name__)
+bp = Blueprint('neuron', __name__)
 MODEL_DIR = 'out/data/semeval/models'
 DATASET_PATH = 'resources/datasets/semeval/train/'
 
