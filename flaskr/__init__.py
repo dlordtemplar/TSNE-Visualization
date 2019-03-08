@@ -36,4 +36,7 @@ def create_app(test_config=None):
     from . import pair
     app.register_blueprint(pair.bp)
 
+    from . import passage
+    app.register_blueprint(passage.bp)
+
     return app
