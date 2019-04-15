@@ -153,10 +153,10 @@
 
                 <br>
                 {% for i in indices %}
-                    {% for highlighted_correct_answers in indexed_highlighted_correct_answers[i] %}
+                    {% for highlighted_correct_answers in indexed_highlighted_correct_answers[i|string] %}
                         QA pair #{{ i }}
                         <br>
-                        Question: {{ asked_questions[i] }}
+                        Question: {{ asked_questions[i|string] }}
                         <br>
                         <br>
                         <ol>
@@ -168,7 +168,7 @@
 
                     <br>Heatmaps for QA pair #{{ i }}
                     <div class="row">
-                        {% for idx in range(indexed_correct_answers[i]|length) %}
+                        {% for idx in range(indexed_correct_answers[i|string]|length) %}
                             <div class="col-lg-2 col-md-3 col-xs-4">
                                 <div data-toggle="modal" data-target="#modal_ca_{{ i }}_{{ idx }}"
                                      class="pl_chart chart_thumb"
@@ -198,7 +198,7 @@
                                                 </p>
                                                 <br/>
                                                 <p class="lead">
-                                                    {{ ' '.join(indexed_correct_answers[i][idx]) }}
+                                                    {{ ' '.join(indexed_correct_answers[i|string][idx]) }}
                                                 </p>
                                                 <div class="pl_chart" id="ca_modal_{{ i }}_{{ idx }}">
                                                 </div>
@@ -223,10 +223,10 @@
 
                 <br>
                 {% for i in indices %}
-                    {% for highlighted_wrong_answers in indexed_highlighted_wrong_answers[i] %}
+                    {% for highlighted_wrong_answers in indexed_highlighted_wrong_answers[i|string] %}
                         QA pair #{{ i }}
                         <br>
-                        Question: {{ asked_questions[i] }}
+                        Question: {{ asked_questions[i|string] }}
                         <br>
                         <br>
                         <ol>
@@ -238,7 +238,7 @@
 
                     <br>Heatmaps for QA pair #{{ i }}
                     <div class="row">
-                        {% for idx in range(indexed_wrong_answers[i]|length) %}
+                        {% for idx in range(indexed_wrong_answers[i|string]|length) %}
                             <div class="col-lg-2 col-md-3 col-xs-4">
                                 <div data-toggle="modal" data-target="#modal_wa_{{ i }}_{{ idx }}"
                                      class="pl_chart chart_thumb"
@@ -268,7 +268,7 @@
                                                 </p>
                                                 <br/>
                                                 <p class="lead">
-                                                    {{ ' '.join(indexed_wrong_answers[i][idx]) }}
+                                                    {{ ' '.join(indexed_wrong_answers[i|string][idx]) }}
                                                 </p>
                                                 <div class="pl_chart" id="wa_modal_{{ i }}_{{ idx }}">
                                                 </div>
