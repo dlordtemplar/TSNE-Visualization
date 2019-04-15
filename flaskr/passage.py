@@ -1,9 +1,7 @@
 import os
 import pickle
 from operator import itemgetter
-from threading import Lock
 
-import tensorflow as tf
 import whoosh
 from flask import (
     Blueprint, render_template, request, redirect, url_for, Markup, escape
@@ -15,6 +13,10 @@ from whoosh.filedb.filestore import FileStorage
 from whoosh.index import create_in
 
 from loading_preprocessing_TC import *
+import torch
+
+# ensures reproducibility of Keras results and limits the volume of GPU memory used by the application
+torch.backends.cudnn.enabled = True
 
 bp = Blueprint('passage', __name__)
 DATASET_PATH = 'resources/datasets/insuranceQA/'
@@ -39,8 +41,8 @@ MAX_LENGTH = 200
 # defaults values for the visualization pages
 DEFAULT_NUM_TEXTS = 5
 
-bp._before_request_lock = Lock()
-bp._got_first_request = False
+# bp._before_request_lock = Lock()
+# bp._got_first_request = False
 
 # TODO: Do all these need to be global?
 cos_scores = ['']
@@ -57,7 +59,8 @@ tag_string = "<data-toggle=\"tooltip\" title=\"SCORE\"><span style = \"backgroun
 tag_results = []  # complete HTML code for answer texts highlighted according to the attention scores
 
 
-@bp.before_app_first_request
+# @bp.before_app_first_request
+# @bp.before_request
 def setup():
     global model
     if not os.path.isdir(WHOOSH_PATH):
@@ -184,7 +187,7 @@ def handle_requests(request_form, received_question, processed_question):
 
     if 'attention_threshold' in request_form.keys():
         print("Changed attention threshold value.")
-        attention_threshold = int(request_form['attention_threshold']) / 1000
+        attention_threshold = int(float(request_form['attention_threshold'])) / 1000
 
     if 'use-test1' in request_form.keys() or 'use-test2' in request_form.keys() or 'use-all' in request_form.keys():
         correct_answer_id = -1

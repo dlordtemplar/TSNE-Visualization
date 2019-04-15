@@ -1,148 +1,74 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends 'index.html' %}
 
+{% block title %}
+    Passage
+{% endblock %}
 
-<head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
-    <meta name="description" content="">
-    <meta name="author" content="">
+{% block content %}
+    <div class="container">
+        <div class="jumbotron">
+            <h1 class="display-3">LiveQA</h1>
+            <p>This is a Neural Question Answering system for passage-level answer selection.</p>
+            <p>Given a question and a set of passages, the system selects the passages that contain a correct answer.
+                It is particularly important for answering non-factoid questions, where it is expected that the answer
+                is
+                not a simple fact, but rather a descriptive text.
+                The deep learning architecture is based on <a target="_blank"
+                                                              href="http://aclweb.org/anthology/P/P16/P16-1044.pdf">(Tan
+                    et
+                    al., 2016)</a>.
+                It is currently trained and tested on <a target="_blank" href="https://github.com/shuzi/insuranceQA">InsuranceQA</a>
+                corpus v1.</p>
 
-    <title>DeepLee Demo</title>
-    <!-- JQuery -->
-    <script data-require="jquery@2.2.4" data-semver="2.2.4"
-            src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
-    <!-- Bootstrap core CSS + JS -->
-    <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"> -->
-    <!-- <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script> -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css"
-          integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
-    <script src="https://code.jquery.com/jquery-3.1.1.slim.min.js"
-            integrity="sha384-A7FZj7v+d/sdmMqp/nOQwliLvUsJfDHW+k9Omg/a/EheAdgtzNs3hpfag6Ed950n"
-            crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js"
-            integrity="sha384-DztdAPBWPRXSA/3eYEEUWrWCy7G5KFbe8fFjk5JAIxUYHKkDx6Qin1DkWx51bBrb"
-            crossorigin="anonymous"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js"
-            integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn"
-            crossorigin="anonymous"></script>
-    <!-- Bootstrap select CSS + JS -->
-    <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.4/css/bootstrap-select.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.4/js/bootstrap-select.min.js"></script>
-    <script src="https://use.fontawesome.com/a06231d025.js"></script>
-    <!-- Custom styles for this template -->
-    <style>
-        .row .no-float {
-            display: table-cell;
-            float: none;
-        }
+            <div class="form-group row">
+                <div class="col-12">
+                    <form method="POST">
+                        <div class="input-group">
+                            <input type="text" class="form-control" name="question_input"
+                                   placeholder="Ask your question!">
+                            <span class="input-group-btn" role="button">
+                                <button class="btn btn-primary" type="submit" value="Submit">Ask</button>
+                            </span>
+                        </div>
+                    </form>
+                </div>
 
-        .jumbotron p {
-            font-size: 14px !important;
-        }
-
-
-    </style>
-    <link href="../static/style.css" rel="stylesheet">
-
-</head>
-
-<body>
-
-<div class="container">
-    <div class="header clearfix">
-        <nav>
-            <ul class="nav nav-pills float-right">
-                <li class="nav-item">
-                    <a class="nav-link" href="/">Home</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/about">About</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/contact">Contact</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link active" href="/setup=insuranceQA_framework=pytorch">Insurance QA</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/setup=SemEval_framework=pytorch">SemEval</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/visualization">Visualizations</a>
-                </li>
-            </ul>
-        </nav>
-        <h5 class="text-muted">DeepLee NQA</h5>
-    </div>
-
-    <div class="jumbotron">
-        <h1 class="display-3">LiveQA</h1>
-        <p>This is a Neural Question Answering system for passage-level answer selection.</p>
-        <p>Given a question and a set of passages, the system selects the passages that contain a correct answer.
-            It is particularly important for answering non-factoid questions, where it is expected that the answer is
-            not a simple fact, but rather a descriptive text.
-            The deep learning architecture is based on <a target="_blank"
-                                                          href="http://aclweb.org/anthology/P/P16/P16-1044.pdf">(Tan et
-                al., 2016)</a>.
-            It is currently trained and tested on <a target="_blank" href="https://github.com/shuzi/insuranceQA">InsuranceQA</a>
-            corpus v1.</p>
-
-        <div class="row">
-            <div class="form-group col-sm-12">
-                <form method="POST">
-                    <div class="input-group">
-                        <span class="input-group-addon" id="basic-addon1">?</span>
-                        <input type="text" class="form-control" name="question_input" placeholder="Ask your question!">
-                        <span class="input-group-btn" role="button">
-                <button class="btn btn-primary" type="submit" value="Submit">Ask</button>
-              </span>
-                    </div>
-                </form>
             </div>
 
 
-            <div class="form-group col-sm-12 row">
-                <div class="col-4">
-                    <form method="POST">
-                        <input type="file" id="model_file" name="model_file" style="display: none;"/>
-                        <input type="button" value="Select model"
-                               onclick="document.getElementById('model_file').click();" class="btn btn-primary btn-sm"
-                               data-toggle="tooltip" data-placement="top" title="Choose the model">
-                        <input type="submit" value="Submit" class="btn btn-secondary btn-sm">
-                    </form>
-                </div>
-                <div class="col-5 ">
-
-                    <form method="POST">
-                        <div class="form-check form-check-inline" data-toggle="tooltip" data-placement="top"
-                             title="Choose the dataset">
-                            <label class="form-check-label">
-                                <input class="form-check-input" type="checkbox" name="use-test1" {{ checked[0] }}> Test
-                                1
-                            </label>
-                        </div>
-                        <div class="form-check form-check-inline">
-                            <label class="form-check-label">
-                                <input class="form-check-input" type="checkbox" name="use-test2" {{ checked[1] }}> Test
-                                2
-                            </label>
-                        </div>
-                        <div class="form-check form-check-inline">
-                            <label class="form-check-label">
-                                <input class="form-check-input" type="checkbox" name="use-all" {{ checked[2] }}> All
-                            </label>
-                        </div>
-                    </form>
-                </div>
-                <div class="col-3">
-                    <form method="POST">
-                        <input name="attention_threshold" type="range" min="0" max="50" step="10" value="{{ val }}"
+            <form method="POST">
+                <div class="form-group row">
+                    <div class="col-7">
+                        {#                    Current only have the main Whoosh dataset#}
+                        {#                        <div class="form-check form-check-inline" data-toggle="tooltip" data-placement="top"#}
+                        {#                             title="Choose the dataset">#}
+                        {#                            <label class="form-check-label">#}
+                        {#                                <input class="form-check-input" type="checkbox" name="use-test1" {{ checked[0] }}>#}
+                        {#                                Test#}
+                        {#                                1#}
+                        {#                            </label>#}
+                        {#                        </div>#}
+                        {#                        <div class="form-check form-check-inline">#}
+                        {#                            <label class="form-check-label">#}
+                        {#                                <input class="form-check-input" type="checkbox" name="use-test2" {{ checked[1] }}>#}
+                        {#                                Test#}
+                        {#                                2#}
+                        {#                            </label>#}
+                        {#                        </div>#}
+                        {#                        <div class="form-check form-check-inline">#}
+                        {#                            <label class="form-check-label">#}
+                        {#                                <input class="form-check-input" type="checkbox" name="use-all" {{ checked[2] }}> All#}
+                        {#                            </label>#}
+                        {#                        </div>#}
+                    </div>
+                    <div class="col-1">
+                        Attention
+                    </div>
+                    <div class="col-3">
+                        <input name="attention_threshold" type="range" min="0" max="50" step="10"
+                               value="{{ val }}"
                                class="slider"
-                               list="steplist" style="width: 100%;">
+                               list="steplist" style="width: 100%;"/>
                         <datalist id="steplist">
                             <option>0</option>
                             <option>10</option>
@@ -151,61 +77,66 @@
                             <option>40</option>
                             <option>50</option>
                         </datalist>
-                        <input type="submit" value="Submit" class="btn btn-secondary btn-sm" data-toggle="tooltip"
-                               data-placement="top" title="Change the level of attention">
-                    </form>
+                    </div>
+                    <div class="col-1">
+                        <input type="submit" value="Submit" class="btn btn-secondary btn-sm"
+                               data-toggle="tooltip"
+                               data-placement="top" title="Change the level of attention"/>
+                    </div>
 
                 </div>
-            </div>
-
-            <div class="form-group col-sm-12 row text-truncate">
-                <div class="col-12">
-                    <p>
-                        <small>Current model: {{ model_filename|safe }}</small>
-                    </p>
-                </div>
-            </div>
+            </form>
         </div>
-    </div>
 
-    <h3>Question: {{ question|safe }}</h3> {{ error|safe }} {% if question == "" or question == "..." or "empty" in error or
-    texts|length == 0 %}
-    {{ "You have not asked the question yet. Try it out in the text field above. Here are some suggestions:" }}
+    </div>
 
     <div class="container mt-3">
-        <ul class="list-group">
-            <li class="list-group-item"><a href={{ url_for('passage.process_question', received_question="How
+        <div class="row">
+            <div class="col-12">
+                <h3>Question: {{ question|safe }}</h3>
+            </div>
+        </div>
+        <div class="row">
+            {{ error|safe }} {% if question == "" or question == "..." or "empty" in error or texts|length == 0 %}
+            {{ "You have not asked a question yet. Try it out in the text field above. Here are some suggestions:" }}
+            </div>
+
+            <ul class="list-group">
+                <li class="list-group-item"><a href={{ url_for('passage.process_question', received_question="How
                 can I plan my retirement" ) }}>How can I plan my retirement?</a>
-            </li>
-            <li class="list-group-item"><a href={{ url_for('passage.process_question', received_question="Who
+                </li>
+                <li class="list-group-item"><a href={{ url_for('passage.process_question', received_question="Who
                 owns Valley Forge Life Insurance" ) }}>Who owns Valley Forge Life Insurance?</a>
-            </li>
-            <li class="list-group-item"><a href={{ url_for('passage.process_question', received_question="When
+                </li>
+                <li class="list-group-item"><a href={{ url_for('passage.process_question', received_question="When
                 shall you buy Disability Insurance" ) }}>When shall you buy Disability Insurance?</a>
-            </li>
-            <li class="list-group-item"><a href={{ url_for('passage.process_question',
+                </li>
+                <li class="list-group-item"><a href={{ url_for('passage.process_question',
                 received_question="Where can I find cheap car insurance" ) }}>Where can I find cheap car insurance?</a>
-            </li>
-            <li class="list-group-item"><a href={{ url_for( 'passage.process_question', received_question="Can
+                </li>
+                <li class="list-group-item"><a href={{ url_for( 'passage.process_question', received_question="Can
                 I get Health Insurance when I am pregnant" ) }}>Can I get Health Insurance when I am pregnant?</a>
-            </li>
-            <li class="list-group-item"><a href={{ url_for( 'passage.process_question', received_question="Can
+                </li>
+                <li class="list-group-item"><a href={{ url_for( 'passage.process_question', received_question="Can
                 you cash out annuity" ) }}>Can you cash out annuity?</a>
-            </li>
-            <li class="list-group-item"><a href={{ url_for( 'passage.process_question', received_question="When
+                </li>
+                <li class="list-group-item"><a href={{ url_for( 'passage.process_question', received_question="When
                 shall I purchase long term care insurance" ) }}>When shall I purchase long term care insurance?</a>
-            </li>
-            <li class="list-group-item"><a href={{ url_for( 'passage.process_question', received_question="How
+                </li>
+                <li class="list-group-item"><a href={{ url_for( 'passage.process_question', received_question="How
                 fast can you get renter insurance" ) }}>How fast can you get renter insurance?</a>
-            </li>
-            <li class="list-group-item"><a href={{ url_for( 'passage.process_question', received_question="How
+                </li>
+                <li class="list-group-item"><a href={{ url_for( 'passage.process_question', received_question="How
                 does life annuity work" ) }}>How does life annuity work?</a>
-            </li>
-        </ul>
-    </div>
-{% endif %}
+                </li>
+            </ul>
+            </div>
+        {% endif %}
     {% if texts|length > 0 %}
-        <div class="container">Found {{ texts|length }} text(s) in {{ run_time }}. <br>
+        <div class="container">
+        <p>
+            Found {{ texts|length }} text(s) in {{ run_time }}.
+        </p>
         <p>
             <small><i class="fa fa-star" aria-hidden="true"></i> corresponds to the ground truth answer if your
                 question
@@ -215,7 +146,8 @@
         {% for text in texts %}
             <div class="mt-3">
                 <div class="card">
-                    <p class="card-header">Text # {{ loop.index0 + 1 }} | Model score: {{ cos_scores[loop.index0] }}
+                    <p class="card-header">Text # {{ loop.index0 + 1 }} | Model
+                        score: {{ cos_scores[loop.index0] }}
                         {% if
                     loop.index0 == correct_answer_id %}<i class="fa fa-star" aria-hidden="true" data-toggle="tooltip"
                                                           data-placement="top"
@@ -229,19 +161,7 @@
             </div>
         {% endfor %}
     {% endif %}
-    <!-- /container -->
-
-    <footer class="footer">
-        <p>&copy; 2017 - 2018 DFKI. Powered by <a href="https://pypi.python.org/pypi/Whoosh/"
-                                                  target="_blank">Whoosh.</a> <a
-                href="https://www.dfki.de/web/data-protection-de" target="_blank">Data Protection</a></p>
-    </footer>
-    </div>
-
-
 </div>
-
-
-</body>
-
-</html>
+    </div>
+    </div>
+{% endblock %}
