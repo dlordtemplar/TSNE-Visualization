@@ -65,8 +65,8 @@
                         Attention
                     </div>
                     <div class="col-3">
+                        {{ val }}
                         <input name="attention_threshold" type="range" min="0" max="50" step="10"
-                               value="{{ val }}"
                                class="slider"
                                list="steplist" style="width: 100%;"/>
                         <datalist id="steplist">
@@ -98,36 +98,46 @@
         </div>
         <div class="row">
             {{ error|safe }} {% if question == "" or question == "..." or "empty" in error or texts|length == 0 %}
-            {{ "You have not asked a question yet. Try it out in the text field above. Here are some suggestions:" }}
+            <div class="col-12">
+                {{ "You have not asked a question yet. Try it out in the text field above. Here are some suggestions:" }}
+            </div>
             </div>
 
             <ul class="list-group">
-                <li class="list-group-item"><a href={{ url_for('passage.process_question', received_question="How
-                can I plan my retirement" ) }}>How can I plan my retirement?</a>
+                <li class="list-group-item"><a
+                        href={{ url_for('passage.process_question', received_question="How can I plan my retirement" ) }}>How
+                    can I plan my retirement?</a>
                 </li>
-                <li class="list-group-item"><a href={{ url_for('passage.process_question', received_question="Who
-                owns Valley Forge Life Insurance" ) }}>Who owns Valley Forge Life Insurance?</a>
+                <li class="list-group-item"><a
+                        href={{ url_for('passage.process_question', received_question="Who owns Valley Forge Life Insurance" ) }}>Who
+                    owns Valley Forge Life Insurance?</a>
                 </li>
-                <li class="list-group-item"><a href={{ url_for('passage.process_question', received_question="When
-                shall you buy Disability Insurance" ) }}>When shall you buy Disability Insurance?</a>
+                <li class="list-group-item"><a
+                        href={{ url_for('passage.process_question', received_question="When shall you buy Disability Insurance" ) }}>When
+                    shall you buy Disability Insurance?</a>
                 </li>
                 <li class="list-group-item"><a href={{ url_for('passage.process_question',
                 received_question="Where can I find cheap car insurance" ) }}>Where can I find cheap car insurance?</a>
                 </li>
-                <li class="list-group-item"><a href={{ url_for( 'passage.process_question', received_question="Can
-                I get Health Insurance when I am pregnant" ) }}>Can I get Health Insurance when I am pregnant?</a>
+                <li class="list-group-item"><a
+                        href={{ url_for( 'passage.process_question', received_question="Can I get Health Insurance when I am pregnant" ) }}>Can
+                    I get Health Insurance when I am pregnant?</a>
                 </li>
-                <li class="list-group-item"><a href={{ url_for( 'passage.process_question', received_question="Can
-                you cash out annuity" ) }}>Can you cash out annuity?</a>
+                <li class="list-group-item"><a
+                        href={{ url_for( 'passage.process_question', received_question="Can you cash out annuity" ) }}>Can
+                    you cash out annuity?</a>
                 </li>
-                <li class="list-group-item"><a href={{ url_for( 'passage.process_question', received_question="When
-                shall I purchase long term care insurance" ) }}>When shall I purchase long term care insurance?</a>
+                <li class="list-group-item"><a
+                        href={{ url_for( 'passage.process_question', received_question="When shall I purchase long term care insurance" ) }}>When
+                    shall I purchase long term care insurance?</a>
                 </li>
-                <li class="list-group-item"><a href={{ url_for( 'passage.process_question', received_question="How
-                fast can you get renter insurance" ) }}>How fast can you get renter insurance?</a>
+                <li class="list-group-item"><a
+                        href={{ url_for( 'passage.process_question', received_question="How fast can you get renter insurance" ) }}>How
+                    fast can you get renter insurance?</a>
                 </li>
-                <li class="list-group-item"><a href={{ url_for( 'passage.process_question', received_question="How
-                does life annuity work" ) }}>How does life annuity work?</a>
+                <li class="list-group-item"><a
+                        href={{ url_for( 'passage.process_question', received_question="How does life annuity work" ) }}>How
+                    does life annuity work?</a>
                 </li>
             </ul>
             </div>
