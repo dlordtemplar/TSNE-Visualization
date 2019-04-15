@@ -67,7 +67,6 @@ def pair(pair_num):
     }
     response = requests.post(url, headers=headers, params=params)
     result = response.json()
-    print(result)
 
     return render_template('pair.html', question=result['question'],
                            highlighted_wrong_answers=result['highlighted_wrong_answers'],

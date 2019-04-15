@@ -90,8 +90,7 @@ def display_neuron(neuron):
 
     url = ' http://127.0.0.1:5000/neuron/' + str(neuron)
     headers = {'content-type': 'application/json', 'Accept-Charset': 'UTF-8'}
-    data = {}
-    response = requests.post(url, headers=headers, data=data)
+    response = requests.post(url, headers=headers)
     result = response.json()
 
     return render_template('neuron.html',
