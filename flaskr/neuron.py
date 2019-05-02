@@ -1,102 +1,74 @@
 import random
+import re
+import json
 
 import requests
 from flask import (
-    Blueprint, render_template, request, session
+    Blueprint, render_template, request
 )
+from wtforms import Form, SelectField, IntegerField, TextField, BooleanField, SubmitField, validators, ValidationError
 
 bp = Blueprint('neuron', __name__)
 
 # defaults values for the visualization pages
 DEFAULT_NUM_TEXTS = 5
+NEURON_TOTAL = 128
+NUM_TEXT_MAX = 20
+TOTAL_PAIRS = 1790
 
 
-@bp.route('/neuron', defaults={'neuron': 0}, strict_slashes=False, methods=['GET', 'POST'])
-@bp.route('/neuron/<int:neuron>', strict_slashes=False, methods=['GET', 'POST'])
-def display_neuron(neuron):
-    # Parameters
-    if 'random' in session.keys():
-        old_session_random = session['random']
-    if 'num_texts' in session.keys():
-        old_session_num_texts = session['num_texts']
+class NeuronForm(Form):
+    def validate_text_indices(form, field):
+        if field.data:
+            value = field.data.strip()
+            if input != '':
+                result = re.fullmatch(r'\s*\d*(\s*,\s*\d*)*\s*', value)
+                if result is None:
+                    raise ValidationError('Invalid input syntax. Example: 0, 1, 2, 3, 4')
 
-    parameter_changed = False
-    if 'random' in session.keys():
-        old_session_random = session['random']
+    choices = [(i, i) for i in range(128)]
+    neuron_num = SelectField('Neuron', coerce=int, choices=choices, default=0)
+    num_texts = IntegerField('Number of QA pairs', validators=[validators.NumberRange(min=1, max=NUM_TEXT_MAX)])
+    text_indices = TextField('or input indices of QA pairs')
+    random = BooleanField('Random texts')
+    submit = SubmitField('Submit')
+
+
+@bp.route('/neuron', strict_slashes=False, methods=['GET', 'POST'])
+def display_neuron():
+    if request.method == 'POST' and request.form:
+        form = NeuronForm(request.form)
+
+        if not form.validate():
+            return render_template('neuron.html', form=form)
     else:
-        old_session_random = False
+        form = NeuronForm()
+        form.neuron_num.default = 0
+        form.num_texts.default = DEFAULT_NUM_TEXTS
+        form.process()
 
-    if request.method == 'POST':
-        if 'scale' in request.values.keys():
-            session['scale'] = True
-        else:
-            if 'scale' in session.keys():
-                if session['scale']:
-                    session['scale'] = False
-            else:
-                session['scale'] = False
-
-        if 'random' in request.values.keys():
-            session['random'] = True
-            session['manual_indices'] = False
-            parameter_changed = True
-        else:
-            if 'random' in session.keys():
-                if session['random']:
-                    session['random'] = False
-                    parameter_changed = True
-            else:
-                session['random'] = False
-
-        if 'texts_number' in request.values.keys():
-            if request.values['texts_number'] != '':
-                session['num_texts'] = int(request.values['texts_number'])
-                parameter_changed = True
-            elif 'num_texts' not in session.keys():
-                session['num_texts'] = DEFAULT_NUM_TEXTS
-        elif 'num_texts' not in session.keys():
-            session['num_texts'] = DEFAULT_NUM_TEXTS
-
-        if 'texts_indices' in request.values.keys():
-            if request.values['texts_indices'] != '':
-                parameter_changed = True
-                if request.values['texts_indices'] == 'all':
-                    session['indices'] = list(range(len(qa_pairs)))
-                else:
-                    session['indices'] = [int(x) for x in
-                                          request.values['texts_indices'].replace(' ', '').split(',') if
-                                          x != '']
-                session['num_texts'] = len(session['indices'])
-                session['manual_indices'] = True
-        else:
-            if 'manual_indices' not in session.keys():
-                session['manual_indices'] = False
+    if form.random.data:
+        indices = random.sample(range(TOTAL_PAIRS), form.num_texts.data)
     else:
-        if 'manual_indices' not in session.keys():
-            session['manual_indices'] = False
-        if 'scale' not in session.keys():
-            session['scale'] = False
-        if 'random' not in session.keys():
-            session['random'] = False
-        if 'num_texts' not in session.keys():
-            session['num_texts'] = DEFAULT_NUM_TEXTS
-
-    if not session['manual_indices']:
-        if session['random']:
-            if old_session_random != session['random'] or old_session_num_texts != session['num_texts']:
-                session['indices'] = random.sample(range(0, len(qa_pairs)), session['num_texts'])
+        if form.text_indices.data:
+            to_int_array = list(map(int, form.text_indices.data.split(',')))
+            indices = to_int_array
         else:
-            session['indices'] = list(range(0, session['num_texts']))
+            indices = list(range(form.num_texts.data))
 
-    url = ' http://127.0.0.1:5000/neuron/' + str(neuron)
-    headers = {'content-type': 'application/json', 'Accept-Charset': 'UTF-8'}
-    response = requests.post(url, headers=headers)
+    url = ' http://127.0.0.1:5000/neuron/'
+    headers = {'content-type': 'application/json; charset=utf-8'}
+    data = {
+        'neuron': form.neuron_num.data,
+        'indices': indices,
+    }
+    response = requests.post(url, headers=headers, data=json.dumps(data))
     result = response.json()
 
     return render_template('neuron.html',
-                           neuron=result['neuron'],
-                           neuron_num=result['neuron_num'], random=session['random'], indices=session['indices'],
-                           scale=session['scale'], activated_words=result['activated_words'],
+                           form=form,
+                           indices=indices,
+                           activated_words=result['activated_words'],
                            antiactivated_words=result['antiactivated_words'],
                            asked_questions=result['asked_questions'],
                            # plotly

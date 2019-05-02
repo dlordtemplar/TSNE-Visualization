@@ -40,10 +40,10 @@
         function preloader() {
             <!-- Draw correct answer thumbnail charts -->
             for (var i = 0; i < indices.length; i++) {
-                if (pl_ca_heatmap_points[i] !== undefined) {
-                    for (var idx = 0; idx < pl_ca_heatmap_points[i].length; idx++) {
+                if (pl_ca_heatmap_points[indices[i]] !== undefined) {
+                    for (var idx = 0; idx < pl_ca_heatmap_points[indices[i]].length; idx++) {
                         // Plotly wants this value wrapped in an array
-                        var currentPlot = [pl_ca_heatmap_points[i][idx]];
+                        var currentPlot = [pl_ca_heatmap_points[indices[i]][idx]];
                         var words = currentPlot[0].y;
                         currentPlot[0].text = words;
 
@@ -51,17 +51,17 @@
                         currentPlot[0].y = createFakeUniqueWords(words);
 
                         // Draw thumbnail as a static chart
-                        drawChart('ca_thumb', i, idx, currentPlot, {}, true);
+                        drawChart('ca_thumb', indices[i], idx, currentPlot, {}, true);
                     }
                 }
             }
 
             <!-- Draw wrong answer thumbnail charts -->
             for (var i = 0; i < indices.length; i++) {
-                if (pl_wa_heatmap_points[i] !== undefined) {
-                    for (var idx = 0; idx < pl_wa_heatmap_points[i].length; idx++) {
+                if (pl_wa_heatmap_points[indices[i]] !== undefined) {
+                    for (var idx = 0; idx < pl_wa_heatmap_points[indices[i]].length; idx++) {
                         // Plotly wants this value wrapped in an array
-                        var currentPlot = [pl_wa_heatmap_points[i][idx]];
+                        var currentPlot = [pl_wa_heatmap_points[indices[i]][idx]];
                         var words = currentPlot[0].y;
                         currentPlot[0].text = words;
 
@@ -69,7 +69,7 @@
                         currentPlot[0].y = createFakeUniqueWords(words);
 
                         // Draw thumbnail as a static chart
-                        drawChart('wa_thumb', i, idx, currentPlot, {}, true);
+                        drawChart('wa_thumb', indices[i], idx, currentPlot, {}, true);
                     }
                 }
             }
@@ -122,26 +122,83 @@
 {% block content %}
     <div class="container-fluid">
         <div class="row">
-            <div class="col-xs-12 col-md-6 col-xl-4">
-                <p>&lt;&lt;</p>
-            </div>
-            <div class="col-xl-4 text-center">
-                <h2 id="title">Neuron {{ neuron }}</h2>
-                <p>Number of QA pairs </p>
-                <hr>
-                <p>or input indices of QA pairs:</p>
-                <hr>
-                <p>Random Texts</p>
-                <p>
-                    <small>Results on {{ indices|length }} QA pairs: {{ indices }}</small>
-                </p>
-            </div>
-            <div class="col-md-6 col-xl-4">
-                <blockquote>
-                    <p>&gt;></p>
-                </blockquote>
+            <div class="col-3"></div>
+            <form class="col-6" action="" method="post">
+                <div class="form-group row">
+                    <div class="col-2"></div>
+                    <div class="col-8">
+                        <div class="row">
+                            <h2 id="title" class="col-6 text-right">{{ form.neuron_num.label }}</h2>
+                            <div class="col-2 padding-top-2">
+                                {{ form.neuron_num(class="form-control form-control-sm") }}
+                            </div>
+                            <div class="col-4"></div>
+                        </div>
+                    </div>
+                    <div class="col-2"></div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-2"></div>
+                    <div class="col-8">
+                        {% if form.random.data %}
+                            {% if form.text_indices.data != '' %}
+                                <div class="row alert alert-info">Random texts ignores indices.</div>
+                            {% endif %}
+                            {% for message in form.num_texts.errors %}
+                                <div class="row alert alert-danger">{{ message }}</div>
+                            {% endfor %}
+                        {% else %}
+                            {% if form.text_indices.data %}
+                                <div class="row alert alert-info">Selecting indices ignores number of QA pairs.</div>
+                                {% for message in form.text_indices.errors %}
+                                    <div class="row alert alert-danger">{{ message }}</div>
+                                {% endfor %}
+                            {% else %}
+                                {% for message in form.num_texts.errors %}
+                                    <div class="row alert alert-danger">{{ message }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        {% endif %}
 
-            </div>
+
+                        <div class="row">
+                            {{ form.num_texts.label(class="col-sm-6 col-form-label") }}
+                            <div class="col-sm-6">
+                                {{ form.num_texts(class="form-control", type="number", placeholder="Max: 20") }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-2"></div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-2"></div>
+                    <div class="col-8">
+                        <div class="row">
+                            {{ form.text_indices.label(class="col-sm-6 col-form-label") }}
+                            <div class="col-sm-6">
+                                {{ form.text_indices(class="form-control", placeholder="Current: " + indices|join(', ')) }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-2"></div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-2"></div>
+                    <div class="col-8">
+                        <div class="row">
+                            {{ form.random.label(class="col-sm-6 col-form-label") }}
+                            <div class="col-sm-1 padding-top-8">
+                                {{ form.random }}
+                            </div>
+                            <div class="col-sm-5 text-right">
+                                {{ form.submit(class="btn btn-primary") }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-2"></div>
+                </div>
+            </form>
+            <div class="col-3"></div>
         </div>
 
         <div class="row">
