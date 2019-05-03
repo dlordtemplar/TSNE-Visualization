@@ -1,84 +1,61 @@
+import json
+
 import requests
 from flask import (
-    Blueprint, render_template, request, session
+    Blueprint, render_template, request
 )
+from wtforms import Form, SelectField, IntegerField, BooleanField, SubmitField, validators
 
 bp = Blueprint('pair', __name__)
-MODEL_DIR = 'out/data/semeval/models'
-DATASET_PATH = 'resources/datasets/semeval/train/'
-
-# deep learning settings
-MAX_LENGTH = 200
 
 # defaults values for the visualization pages
-DEFAULT_NUM_TEXTS = 5
 DEFAULT_PERPLEXITY = 5
+NEURON_TOTAL = 128
+TOTAL_PAIRS = 1790
 
 
-@bp.route('/pair', defaults={'pair_num': 0}, strict_slashes=False, methods=['GET', 'POST'])
-@bp.route('/pair/<int:pair_num>', strict_slashes=False, methods=['GET', 'POST'])
-def pair(pair_num):
-    if request.method == 'POST':
-        if 'perplexity' in request.values.keys():
-            if request.values['perplexity'] != '':
-                session['perplexity'] = int(request.values['perplexity'])
-            else:
-                session['perplexity'] = DEFAULT_PERPLEXITY
-        elif 'perplexity' not in session.keys():
-            session['perplexity'] = DEFAULT_PERPLEXITY
+class PairForm(Form):
+    choices_pair = [(i, i) for i in range(TOTAL_PAIRS)]
+    pair_num = SelectField('Pair', coerce=int, choices=choices_pair, default=0)
+    choices_with_none = [(i, i) for i in range(NEURON_TOTAL)]
+    choices_with_none.insert(0, (-1, 'None'))
+    ca_neuron = SelectField('Neuron #', coerce=int, choices=choices_with_none, default=-1)
+    wa_neuron = SelectField('Neuron #', coerce=int, choices=choices_with_none, default=-1)
+    perplexity = IntegerField('Perplexity', validators=[validators.NumberRange(min=0)],
+                              default=DEFAULT_PERPLEXITY)
+    scale = BooleanField('Scale neurons')
+    submit = SubmitField('Submit')
 
-        if 'scale' in request.values.keys():
-            session['scale'] = True
-        else:
-            if 'scale' in session.keys():
-                if session['scale']:
-                    session['scale'] = False
-            else:
-                session['scale'] = False
 
-        if 'neuron_num_ca' in request.values.keys():
-            if request.values.get("neuron_num_ca") != 'None':
-                session['neuron_display_ca'] = int(request.values.get("neuron_num_ca"))
-            else:
-                session['neuron_display_ca'] = 'None'
-        if 'neuron_num_wa' in request.values.keys():
-            if request.values.get("neuron_num_wa") != 'None':
-                session['neuron_display_wa'] = int(request.values.get("neuron_num_wa"))
-            else:
-                session['neuron_display_wa'] = 'None'
+@bp.route('/pair', strict_slashes=False, methods=['GET', 'POST'])
+def pair():
+    if request.method == 'POST' and request.form:
+        form = PairForm(request.form)
+        if not form.validate():
+            return render_template('pair.html', form=form)
     else:
-        if 'perplexity' not in session.keys():
-            session['perplexity'] = DEFAULT_PERPLEXITY
-        if 'neuron_display_ca' not in session.keys():
-            session['neuron_display_ca'] = 'None'
-        if 'neuron_display_wa' not in session.keys():
-            session['neuron_display_wa'] = 'None'
-        if 'scale' not in session.keys():
-            session['scale'] = False
+        form = PairForm()
+        form.process()
 
-    url = ' http://127.0.0.1:5000/pair/' + str(pair_num)
-    # headers = {'content-type': 'application/json', 'Accept-Charset': 'UTF-8'}
-    headers = {'Accept-Charset': 'UTF-8'}
-    params = {
-        'perplexity': session['perplexity'],
-        'neuron_display_ca': session['neuron_display_ca'],
-        'neuron_display_wa': session['neuron_display_wa'],
-        'scale': session['scale']
+    url = ' http://127.0.0.1:5000/pair/'
+    headers = {'content-type': 'application/json; charset=utf-8'}
+    data = {
+        'pair_num': form.pair_num.data,
+        'perplexity': form.perplexity.data,
+        'ca_neuron': form.ca_neuron.data,
+        'wa_neuron': form.wa_neuron.data,
+        'scale': form.scale.data
     }
-    response = requests.post(url, headers=headers, params=params)
+    response = requests.post(url, headers=headers, data=json.dumps(data))
     result = response.json()
 
-    return render_template('pair.html', question=result['question'],
+    return render_template('pair.html',
+                           form=form,
+                           question=result['question'],
                            highlighted_wrong_answers=result['highlighted_wrong_answers'],
                            highlighted_correct_answers=result['highlighted_correct_answers'],
                            wrong_answers=result['wrong_answers'],
                            correct_answers=result['correct_answers'],
-                           pair_num=result['pair_num'],
-                           neuron_num=result['neuron_num'],
-                           neuron_display_ca=session['neuron_display_ca'],
-                           neuron_display_wa=session['neuron_display_wa'],
-                           scale=session['scale'],
-                           texts_len=result['texts_len'],
                            scores_ca=result['scores_ca'],
                            scores_wa=result['scores_wa'],
                            # plotly

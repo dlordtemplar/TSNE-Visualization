@@ -45,6 +45,16 @@
         var drawn = {};
 
         function preloader() {
+            $('#ca_neuron').change(function () {
+                var submitButton = $('#submit');
+                submitButton.click();
+            });
+
+            $('#wa_neuron').change(function () {
+                var submitButton = $('#submit');
+                submitButton.click();
+            });
+
             <!-- Draw TSNE chart -->
             var layout = {
                 height: 600,
@@ -105,58 +115,81 @@
 {% endblock %}
 
 {% block content %}
-    <div class="container-fluid" id="content">
-        <div class="row">
+    <form action="" method="POST" class="top-buffer" id="pairForm">
+        <div class="row form-group">
             <div class="col-sm-2"></div>
             <div class="col-sm-8  text-center">
-                <h2 id="title">Pair {{ pair_num|safe }} / {{ texts_len|safe }}</h2>
+                <div class="row">
+                    <h2 id="title" class="col-6 text-right">{{ form.pair_num.label(class="my-auto") }}</h2>
+                    <div class="col-2 padding-top-2">
+                        <div class="row">
+                            <div class="col-8">
+                                {{ form.pair_num(class="form-control form-control-sm custom-select") }}
+                            </div>
+                            <div class="col-4"></div>
+                        </div>
+                    </div>
+                    <div class="col-4"></div>
+                </div>
             </div>
             <div class="col-sm-2"></div>
         </div>
 
-        {# TODO: Convert this form submission to AJAX calls #}
-        <form method="POST" class="row top-buffer">
+        <div class="row">
             <div class="col-sm-3  text-center">
             </div>
-            <div class="col-sm-6  text-center">
-                <h3>{{ question }}</h3>
-                <div class="form-check form-check-inline align-items-center" data-toggle="tooltip" data-placement="top"
-                     title="Whether to scale neuron activations to [-1; 1] or not.">
-                    <input class="form-check-input form-check-inline" type="checkbox" name="scale" value="scale"
-                            {% if scale %}
-                           checked {% endif %}> Scale neuron activations
-                    <label class="form-check-label">
-                    </label>
-                    <input type="submit" value="Submit" class="btn ml-2 btn-sm">
+            <div class="col-sm-6">
+                <div class="form-group row">
+                    <div class="col-2"></div>
+                    <div class="col-8">
+                        {% for message in form.perplexity.errors %}
+                            <div class="row alert alert-danger">{{ message }}</div>
+                        {% endfor %}
+                        <div class="row">
+                            {{ form.perplexity.label(class="col-sm-6 col-form-label") }}
+                            <div class="col-sm-6">
+                                {{ form.perplexity(class="form-control", type="number", placeholder="Recommended: 5 to 50") }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-2"></div>
                 </div>
-            </div>
-            <div class="col-sm-3  text-center">
-            </div>
+                <div class="form-group row">
+                    <div class="col-2"></div>
+                    <div class="col-8">
+                        <div class="row">
+                            {{ form.scale.label(class="col-sm-6 col-form-label", title="Whether to scale neuron activations to [-1; 1] or not. Has no effect on the graph.") }}
+                            <div class="col-sm-1 padding-top-8">
+                                {{ form.scale }}
+                            </div>
+                            <div class="col-sm-5 text-right">
+                                {{ form.submit(class="btn btn-primary") }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-2"></div>
+                </div>
 
+            </div>
+        </div>
 
+        <div class="row margin-bottom-15">
+            <h3 class="col-12 text-center">{{ question }}</h3>
+        </div>
+
+        <div class="row">
             <div class="col-sm-3 ">
                 <h3>Correct answers</h3>
-
-                <p>
                 <div class="form-group">
                     <div class="row align-items-center">
-                        <div class="col-4">
-                            <label for="neuron_num_ca" class="control-label my-auto">Neuron #</label>
-                        </div>
                         <div class="col-8">
-                            <select class="form-control custom-select custom-select-sm" id="neuron_num_ca"
-                                    name="neuron_num_ca"
-                                    onchange="this.form.submit()">
-                                <option value=None {% if neuron_display_ca=='None' %} selected {% endif %}>None
-                                </option>
-                                {% for idx in range(neuron_num) %}
-                                    <option value={{ idx }} {% if neuron_display_ca== idx %} selected {% endif %}>{{ idx }}</option>
-                                {% endfor %}
-                            </select>
+                            {{ form.ca_neuron.label(class="control-label my-auto") }}
+                        </div>
+                        <div class="col-4">
+                            {{ form.ca_neuron(class="form-control form-control-sm custom-select") }}
                         </div>
                     </div>
                 </div>
-                </p>
 
                 {% for idx in range(highlighted_correct_answers|length) %}
                     <div class="card mt-1">
@@ -224,50 +257,26 @@
                     <figure class="figure w-100">
                         <div class="row" id="pl_tsne"></div>
                         <figcaption class="figure-caption">
-                            t-SNE plot. Perplexity: {{ session['perplexity'] }}
+                            t-SNE plot. Perplexity: {{ form.perplexity.data }}
                             <br/>
                             Values shown above are ground truths.
                         </figcaption>
                     </figure>
                 </div>
-                <div class="form-group row">
-                    <div class="col-sm-4">
-                    </div>
-                    <div class="col-sm-4">
-                        <label for="perplexity">Change perplexity value:</label>
-                        <input type="text" class="form-control" id="perplexity" name="perplexity"
-                               aria-describedby="perplexity" placeholder="recommended: 5 to 50. default: 5">
-                        <input type="submit" value="Plot" class="btn btn-sm" onclick=loading();>
-                    </div>
-                    <div class="col-sm-4">
-                    </div>
-                </div>
             </div>
             <div class="col-sm-3">
                 <h3>Wrong answers</h3>
 
-                <p>
                 <div class="form-group">
                     <div class="row align-items-center">
-                        <div class="col-4">
-                            <label for="neuron_num_wa" class="control-label my-auto">Neuron #</label>
-                        </div>
                         <div class="col-8">
-                            <select class="form-control custom-select custom-select-sm" id="neuron_num_wa"
-                                    name="neuron_num_wa"
-                                    onchange="this.form.submit()">
-                                <option {% if neuron_display_wa==
-                       'None' %} selected {% endif %}>None
-                                </option>
-                                {% for idx in range(neuron_num) %}
-
-                                    <option value={{ idx }} {% if neuron_display_wa== idx %} selected {% endif %}>{{ idx }}</option>
-                                {% endfor %}
-                            </select>
+                            {{ form.wa_neuron.label(class="control-label my-auto") }}
+                        </div>
+                        <div class="col-4">
+                            {{ form.wa_neuron(class="form-control form-control-sm custom-select") }}
                         </div>
                     </div>
                 </div>
-                </p>
 
                 {% for idx in range(highlighted_wrong_answers|length) %}
                     <div class="card mt-1">
@@ -330,6 +339,6 @@
                     </div>
                 {% endfor %}
             </div>
-        </form>
-    </div>
+        </div>
+    </form>
 {% endblock %}

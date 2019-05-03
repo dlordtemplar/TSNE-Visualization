@@ -26,7 +26,7 @@ class NeuronForm(Form):
                 if result is None:
                     raise ValidationError('Invalid input syntax. Example: 0, 1, 2, 3, 4')
 
-    choices = [(i, i) for i in range(128)]
+    choices = [(i, i) for i in range(NEURON_TOTAL)]
     neuron_num = SelectField('Neuron', coerce=int, choices=choices, default=0)
     num_texts = IntegerField('Number of QA pairs', validators=[validators.NumberRange(min=1, max=NUM_TEXT_MAX)])
     text_indices = TextField('or input indices of QA pairs')
