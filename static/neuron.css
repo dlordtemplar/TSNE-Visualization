@@ -1,0 +1,17 @@
+.modal-dialog {
+    width: auto;
+    height: 100%;
+    max-width: 750px;
+}
+
+.chart_thumb {
+    cursor: pointer;
+}
+
+.padding-top-2 {
+    padding-top: 2px;
+}
+
+.padding-top-8 {
+    padding-top: 8px;
+}
