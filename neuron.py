@@ -56,7 +56,7 @@ def display_neuron():
         else:
             indices = list(range(form.num_texts.data))
 
-    url = current_app.config['REST_KERAS_URL']
+    url = current_app.config['REST_KERAS_URL'] + 'neuron/'
     headers = {'content-type': 'application/json; charset=utf-8'}
     data = {
         'neuron': form.neuron_num.data,

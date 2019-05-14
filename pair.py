@@ -37,7 +37,7 @@ def pair():
         form = PairForm()
         form.process()
 
-    url = current_app.config['REST_KERAS_URL']
+    url = current_app.config['REST_KERAS_URL'] + 'pair/'
     headers = {'content-type': 'application/json; charset=utf-8'}
     data = {
         'pair_num': form.pair_num.data,

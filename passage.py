@@ -21,7 +21,7 @@ def passage():
             return redirect(
                 url_for('passage.process_question', received_question=received_question))
 
-    url = current_app.config['REST_TORCH_URL']
+    url = current_app.config['REST_TORCH_URL'] + 'passage/'
     headers = {'Accept-Charset': 'UTF-8'}
     params = {
         'attention_threshold': attention_threshold
@@ -49,7 +49,7 @@ def process_question(received_question):
     if 'question_input' in request.form:
         received_question = request.form['question_input']
 
-    url = current_app.config['REST_TORCH_URL'] + received_question
+    url = current_app.config['REST_TORCH_URL'] + 'passage/' + received_question
     headers = {'Accept-Charset': 'UTF-8'}
     params = {
         'attention_threshold': attention_threshold,
