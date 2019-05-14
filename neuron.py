@@ -1,10 +1,10 @@
+import json
 import random
 import re
-import json
 
 import requests
 from flask import (
-    Blueprint, render_template, request
+    Blueprint, render_template, request, current_app
 )
 from wtforms import Form, SelectField, IntegerField, TextField, BooleanField, SubmitField, validators, ValidationError
 
@@ -56,7 +56,7 @@ def display_neuron():
         else:
             indices = list(range(form.num_texts.data))
 
-    url = ' http://127.0.0.1:5000/neuron/'
+    url = current_app.config['REST_KERAS_URL']
     headers = {'content-type': 'application/json; charset=utf-8'}
     data = {
         'neuron': form.neuron_num.data,

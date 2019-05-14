@@ -1,9 +1,10 @@
 import requests
 from flask import (
-    Blueprint, render_template, request, redirect, url_for
+    Blueprint, render_template, request, redirect, url_for, current_app
 )
 
 bp = Blueprint('passage', __name__)
+
 
 attention_threshold: float = 0  # for displaying highlights in the text
 
@@ -20,7 +21,7 @@ def passage():
             return redirect(
                 url_for('passage.process_question', received_question=received_question))
 
-    url = ' http://127.0.0.1:5001/passage/'
+    url = current_app.config['REST_TORCH_URL']
     headers = {'Accept-Charset': 'UTF-8'}
     params = {
         'attention_threshold': attention_threshold
@@ -48,7 +49,7 @@ def process_question(received_question):
     if 'question_input' in request.form:
         received_question = request.form['question_input']
 
-    url = ' http://127.0.0.1:5001/passage/' + received_question
+    url = current_app.config['REST_TORCH_URL'] + received_question
     headers = {'Accept-Charset': 'UTF-8'}
     params = {
         'attention_threshold': attention_threshold,

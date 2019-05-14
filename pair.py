@@ -2,7 +2,7 @@ import json
 
 import requests
 from flask import (
-    Blueprint, render_template, request
+    Blueprint, render_template, request, current_app
 )
 from wtforms import Form, SelectField, IntegerField, BooleanField, SubmitField, validators
 
@@ -37,7 +37,7 @@ def pair():
         form = PairForm()
         form.process()
 
-    url = ' http://127.0.0.1:5000/pair/'
+    url = current_app.config['REST_KERAS_URL']
     headers = {'content-type': 'application/json; charset=utf-8'}
     data = {
         'pair_num': form.pair_num.data,
