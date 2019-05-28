@@ -8,18 +8,66 @@
     About
 {% endblock %}
 
+{% block script %}
+    <link href="{{ url_for('static', filename = 'about.css') }}" rel="stylesheet">
+{% endblock %}
+
 {% block content %}
-    <div class="row">
+    <div class="row margin-bottom-30">
         <div class="col">
         </div>
         <div class="col-6 text-center">
             <h1 class="display-3">About</h1>
             <p>
-                Open source implementation of Ekaterina Loginova's work at the DFKI on visualization of Keras Question Answering
-                systems.
+                Open source implementation of Ekaterina Loginova's work at the DFKI on visualization of Question
+                Answering systems.
+            </p>
+            <p>
+                View Kate's introduction video here:
+                <a href="https://vimeo.com/272708264">https://vimeo.com/272708264</a>
             </p>
         </div>
         <div class="col">
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-3">
+        </div>
+        <div class="jumbotron text-center col-6">
+            <h1 class="display-3">Models</h1>
+            <p>Given a question and a set of passages, the system selects the passages that contain a correct
+                answer.
+                It is particularly important for answering non-factoid questions, where it is expected that the
+                answer is not a simple fact, but rather a descriptive text.
+            </p>
+            <p>There are currently 2 models: one for InsuranceQA and one for SemEval.
+                The deep learning architectures used in both models are based on <a target="_blank"
+                                                                                    href="http://aclweb.org/anthology/P/P16/P16-1044.pdf">(Tan
+                    et al., 2016)</a>.</p>
+            <div class="card mx-auto margin-bottom-30">
+                <img class="card-img-top" src="{{ url_for('static', filename='pattern.jpg') }}">
+                <div class="card-block margin-top-30">
+                    <h5 class="card-title"><a href="/passage">Passage</a> - InsuranceQA - PyTorch</h5>
+                    <p class="card-text">
+                    <p>Dataset: <a target="_blank" href="https://github.com/shuzi/insuranceQA">InsuranceQA corpus v1</a></p>
+                    <p>Dropout, learning rate decay, attention, trainable word2vec embeddings.</p>
+                </div>
+            </div>
+            <div class="card mx-auto margin-top-20">
+                <img class="card-img-top" src="{{ url_for('static', filename='pattern.jpg') }}">
+                <img class="card-img-top" src="{{ url_for('static', filename='deep_siamese_bilstm.png') }}">
+                <div class="card-block margin-top-30">
+                    <h5 class="card-title"><a href="/neuron">Neuron</a>, <a href="/pair">Pair</a> - SemEval - Keras</h5>
+                    <p>Dataset: <a target="_blank" href="http://alt.qcri.org/semeval2017/task3/index.php?id=data-and-tools">SemEval 2017 Task 3 Subtask A dataset</a></p>
+                    <p class="card-text">Frozen Google word2vec embeddings, 2 stacked BiLSTM with the layer
+                        sizes: M = 96 and N = 64, max pooling, no dropout. Visualization modifications to the
+                        layers.</p>
+
+                </div>
+            </div>
+        </div>
+        <div class="col-3">
         </div>
     </div>
 {% endblock %}
