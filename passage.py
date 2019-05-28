@@ -2,6 +2,7 @@ import requests
 from flask import (
     Blueprint, render_template, request, redirect, url_for
 )
+import json
 
 bp = Blueprint('passage', __name__)
 
@@ -63,6 +64,6 @@ def process_question(received_question):
                            question=result['question'],
                            error=result['error'],
                            checked=result['checked'],
-                           cos_scores=result['cos_scores'],
+                           cos_scores=json.loads(result['cos_scores']),
                            run_time=result['run_time'],
                            correct_answer_id=result['correct_answer_id'])
