@@ -97,7 +97,9 @@
                 var words = currentPlot[0].y;
                 currentPlot[0].text = words;
 
-                // TODO: Strip fakeUniqueWord values from workaround in hover tooltip
+                // Replace duplicate words with "unique" versions
+                currentPlot[0].y = createFakeUniqueWords(words);
+
                 // Hiding "x" values from tooltip here as they are all 0.
                 // This method below did not work for me.
                 // https://stackoverflow.com/questions/41128318/is-it-possible-to-change-text-in-hover-tool-tip-for-plotlyjs-bubble-chart
