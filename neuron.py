@@ -70,7 +70,7 @@ def display_neuron():
                            indices=indices,
                            activated_words=result['activated_words'],
                            antiactivated_words=result['antiactivated_words'],
-                           asked_questions=result['asked_questions'],
+                           asked_questions=json.loads(result['asked_questions']),
                            # plotly
                            pl_ca_heatmap_points=result['pl_ca_heatmap_points'],
                            pl_wa_heatmap_points=result['pl_wa_heatmap_points'],
