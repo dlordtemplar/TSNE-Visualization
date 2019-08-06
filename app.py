@@ -5,6 +5,7 @@ import neuron
 import pair
 import passage
 import questions
+import pos
 
 # create and configure the app
 app = Flask(__name__)
@@ -15,6 +16,7 @@ app.register_blueprint(neuron.bp)
 app.register_blueprint(pair.bp)
 app.register_blueprint(passage.bp)
 app.register_blueprint(questions.bp)
+app.register_blueprint(pos.bp)
 
 if __name__ == '__main__':
     app.run()
