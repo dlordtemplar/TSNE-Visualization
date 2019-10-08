@@ -1,0 +1,225 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    Question Answer Pairs
+{% endblock %}
+
+{% block script %}
+    {#    <link href="{{ url_for('static', filename = 'pair.css') }}" rel="stylesheet">#}
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css"
+          integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+    <script src="{{ url_for('static', filename = 'plotly-latest.min.js') }}"></script>
+    <script type="text/javascript">
+        var plotly_tsne = {{plotly_all_questions | safe}};
+
+        function drawChart(div_id_partial, index, data, layout, isStatic) {
+            Plotly.newPlot(div_id_partial + index, data, layout, {staticPlot: isStatic});
+        }
+
+        var drawn = {};
+
+        function preloader() {
+            <!-- Draw TSNE chart -->
+            var layout = {
+                height: 600,
+                showlegend: false,
+                xaxis: {
+                    autorange: true,
+                    zeroline: false,
+                    showline: false
+                },
+                yaxis: {
+                    autorange: true,
+                    zeroline: false,
+                    showline: false
+                }
+            };
+            Plotly.newPlot('pl_tsne', plotly_tsne, layout);
+        }
+
+        window.onload = preloader;
+    </script>
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+
+        <br/>
+        <br/>
+
+        <div class="row">
+            <div class="col text-center">
+                Perplexity {{ perplexity }}
+            </div>
+        </div>
+
+        <div class="row margin-bottom-15">
+            {#            <h3 class="col-12 text-center">{{ question }}</h3>#}
+        </div>
+
+        <div class="row">
+            {#            <div class="col-sm-3 ">#}
+            {#                <h3>Correct answers</h3>#}
+            {#                <div class="form-group">#}
+            {#                    <div class="row align-items-center">#}
+            {#                        <div class="col-8">#}
+            {#                            {{ form.ca_neuron.label(class="control-label my-auto") }}#}
+            {#                        </div>#}
+            {#                        <div class="col-4">#}
+            {#                            {{ form.ca_neuron(class="form-control form-control-sm custom-select") }}#}
+            {#                        </div>#}
+            {#                    </div>#}
+            {#                </div>#}
+            {##}
+            {#                {% for idx in range(highlighted_correct_answers|length) %}#}
+            {#                    <div class="card mt-1">#}
+            {#                        <div class="card-block">#}
+            {#                            <p class="card-text">#}
+            {#                                <b>CA{{ idx + 1 }}:</b>#}
+            {#                                {{ highlighted_correct_answers[idx]|safe }}#}
+            {#                            </p>#}
+            {#                            <div class="card-footer">#}
+            {#                                <div class="row">#}
+            {#                                    <div class="col-8 text-left">#}
+            {#                                        <span>#}
+            {#                                            {% if scores_ca[loop.index0][0] > 0.5 %}#}
+            {#                                                <i class="fa fa-check-circle correct-marked-correct"#}
+            {#                                                   title="Correctly classified as a correct answer"></i>#}
+            {#                                            {% else %}#}
+            {#                                                <i class="fa fa-times-circle correct-marked-wrong"#}
+            {#                                                   title="Incorrectly classified as a wrong answer"></i>#}
+            {#                                            {% endif %}#}
+            {#                                        </span>#}
+            {#                                        <span class="text-muted">#}
+            {#                                            {{ scores_ca[loop.index0][0]|round(2) }}#}
+            {#                                        </span>#}
+            {#                                    </div>#}
+            {#                                    <div class="col-4 text-right">#}
+            {#                                        <button type="button" class="btn btn-link btn-sm heatmap-btn"#}
+            {#                                                data-toggle="modal"#}
+            {#                                                data-target="#modal_ca_{{ idx }}"#}
+            {#                                                id="ca_btn_{{ idx }}">#}
+            {#                                            Heatmap#}
+            {#                                        </button>#}
+            {#                                    </div>#}
+            {##}
+            {#                                    <!-- Modal -->#}
+            {#                                    <div class="modal fade fullscreen" id="modal_ca_{{ idx }}" tabindex="-1"#}
+            {#                                         role="dialog"#}
+            {#                                         aria-labelledby="modal_ca_{{ idx }}_title" aria-hidden="true">#}
+            {#                                        <div class="modal-dialog custom-class" role="document">#}
+            {#                                            <div class="modal-content">#}
+            {#                                                <div class="modal-header">#}
+            {#                                                    <h5 class="modal-title">Neuron#}
+            {#                                                        Activation#}
+            {#                                                        Heatmap</h5>#}
+            {#                                                    <button type="button" class="close" data-dismiss="modal"#}
+            {#                                                            aria-label="Close">#}
+            {#                                                        <span aria-hidden="true">&times;</span>#}
+            {#                                                    </button>#}
+            {#                                                </div>#}
+            {#                                                <div class="modal-body text-center">#}
+            {#                                                    <p class="lead">{{ correct_answers[idx] }}</p>#}
+            {#                                                    <div class="pl_chart" id="ca_modal_{{ idx }}">#}
+            {#                                                    </div>#}
+            {#                                                </div>#}
+            {#                                            </div>#}
+            {#                                        </div>#}
+            {#                                    </div>#}
+            {#                                </div>#}
+            {#                            </div>#}
+            {#                        </div>#}
+            {#                    </div>#}
+            {#                {% endfor %}#}
+            {#            </div>#}
+            <div class="col  text-center">
+                <div class="row">
+                    <figure class="figure w-100">
+                        <div class="row" id="pl_tsne"></div>
+                        <figcaption class="figure-caption">
+                            t-SNE plot of all 128 neurons' activations of the attention scores on all words used in training.
+                            <br/>
+                            {#                            Values shown above are ground truths.#}
+                        </figcaption>
+                    </figure>
+                </div>
+            </div>
+            {#            <div class="col-sm-3">#}
+            {#                <h3>Wrong answers</h3>#}
+            {##}
+            {#                <div class="form-group">#}
+            {#                    <div class="row align-items-center">#}
+            {#                        <div class="col-8">#}
+            {#                            {{ form.wa_neuron.label(class="control-label my-auto") }}#}
+            {#                        </div>#}
+            {#                        <div class="col-4">#}
+            {#                            {{ form.wa_neuron(class="form-control form-control-sm custom-select") }}#}
+            {#                        </div>#}
+            {#                    </div>#}
+            {#                </div>#}
+            {##}
+            {#                {% for idx in range(highlighted_wrong_answers|length) %}#}
+            {#                    <div class="card mt-1">#}
+            {#                        <div class="card-block">#}
+            {#                            <p class="card-text">#}
+            {#                                <b>WA{{ idx + 1 }}:</b>#}
+            {#                                {{ highlighted_wrong_answers[idx]|safe }}#}
+            {#                            </p>#}
+            {#                            <div class="card-footer">#}
+            {#                                <div class="row">#}
+            {#                                    <div class="col-8 text-left">#}
+            {#                                        <span>#}
+            {#                                            {% if scores_wa[loop.index0][0] > 0.5 %}#}
+            {#                                                <i class="fa fa-times-circle wrong-marked-wrong"#}
+            {#                                                   title="Incorrectly classified as a correct answer"></i>#}
+            {#                                            {% else %}#}
+            {#                                                <i class="fa fa-check-circle wrong-marked-correct"#}
+            {#                                                   title="Correctly classified as a wrong answer"></i>#}
+            {#                                            {% endif %}#}
+            {#                                        </span>#}
+            {#                                        <span class="text-muted">#}
+            {#                                            {{ scores_wa[loop.index0][0]|round(2) }}#}
+            {#                                        </span>#}
+            {#                                    </div>#}
+            {#                                    <div class="col-4 text-right">#}
+            {#                                        <button type="button" class="btn btn-link btn-sm heatmap-btn"#}
+            {#                                                data-toggle="modal"#}
+            {#                                                data-target="#modal_wa_{{ idx }}"#}
+            {#                                                id="wa_btn_{{ idx }}">#}
+            {#                                            Heatmap#}
+            {#                                        </button>#}
+            {#                                    </div>#}
+            {##}
+            {#                                    <!-- Modal -->#}
+            {#                                    <div class="modal fade fullscreen" id="modal_wa_{{ idx }}" tabindex="-1"#}
+            {#                                         role="dialog"#}
+            {#                                         aria-labelledby="modal_wa_{{ idx }}_title" aria-hidden="true">#}
+            {#                                        <div class="modal-dialog custom-class" role="document">#}
+            {#                                            <div class="modal-content">#}
+            {#                                                <div class="modal-header">#}
+            {#                                                    <h5 class="modal-title">Neuron#}
+            {#                                                        Activation#}
+            {#                                                        Heatmap</h5>#}
+            {#                                                    <button type="button" class="close" data-dismiss="modal"#}
+            {#                                                            aria-label="Close">#}
+            {#                                                        <span aria-hidden="true">&times;</span>#}
+            {#                                                    </button>#}
+            {#                                                </div>#}
+            {#                                                <div class="modal-body text-center">#}
+            {#                                                    <p class="lead">{{ wrong_answers[idx] }}</p>#}
+            {#                                                    <div class="pl_chart" id="wa_modal_{{ idx }}">#}
+            {#                                                    </div>#}
+            {#                                                </div>#}
+            {#                                            </div>#}
+            {#                                        </div>#}
+            {#                                    </div>#}
+            {#                                </div>#}
+            {#                            </div>#}
+            {#                        </div>#}
+            {#                    </div>#}
+            {#                {% endfor %}#}
+            {#            </div>#}
+        </div>
+        {#    </form>#}
+    </div>
+{% endblock %}
