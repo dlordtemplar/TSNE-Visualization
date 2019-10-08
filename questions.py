@@ -27,7 +27,7 @@ TOTAL_PAIRS = 1790
 
 
 @bp.route('/questions', strict_slashes=False, methods=['GET', 'POST'])
-def pair():
+def questions():
     # if request.method == 'POST' and request.form:
     #     form = PairForm(request.form)
     #     if not form.validate():
