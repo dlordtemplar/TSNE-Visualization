@@ -1,0 +1,326 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    Live Model
+{% endblock %}
+
+{% block script %}
+    <link href="{{ url_for('static', filename = 'pair.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css"
+          integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+    <script src="{{ url_for('static', filename = 'plotly-latest.min.js') }}"></script>
+    <script type="text/javascript">
+        var plotly_tsne = {{plotly_tsne | safe}};
+
+        // plot.ly doesn't support duplicate axis labels currently, but we need them to make charts more legible.
+        // https://github.com/plotly/plotly.js/issues/1516
+        // ticktext/tickvals method didn't work when I tried, so this method is used to create fake unique words.
+        // A side effect of this is that hover text now needs to be stripped of this whitespace.
+        function createFakeUniqueWords(word_array) {
+            var fakeUniqueWords = Array(word_array.length)
+            var usedWords = {};
+            for (var q = 0; q < word_array.length; q++) {
+                if (word_array[q] in usedWords) {
+                    var fakeWord = word_array[q];
+                    for (var k = 0; k < usedWords[word_array[q]]; k++) {
+                        // "Unique" words just prefix the word with spaces
+                        fakeWord = ' ' + fakeWord;
+                    }
+                    fakeUniqueWords[q] = fakeWord;
+                    usedWords[word_array[q]] += 1;
+                } else {
+                    fakeUniqueWords[q] = word_array[q];
+                    usedWords[word_array[q]] = 1;
+                }
+            }
+            return fakeUniqueWords
+        }
+
+        function drawChart(div_id_partial, index, data, layout, isStatic) {
+            Plotly.newPlot(div_id_partial + index, data, layout, {staticPlot: isStatic});
+        }
+
+        var pl_ca_heatmaps = {{ pl_ca_heatmaps|safe }};
+        var pl_wa_heatmaps = {{ pl_wa_heatmaps|safe }};
+        var drawn = {};
+
+        function preloader() {
+            <!-- Draw TSNE chart -->
+            var layout = {
+                height: 600,
+                showlegend: false,
+                xaxis: {
+                    autorange: true,
+                    zeroline: false,
+                    showline: false
+                },
+                yaxis: {
+                    autorange: true,
+                    zeroline: false,
+                    showline: false
+                }
+            };
+            Plotly.newPlot('pl_tsne', plotly_tsne, layout);
+        }
+
+        window.onload = preloader;
+
+        <!-- Full charts are drawn when shown to reduce page slowdown on load -->
+        $(window).on('show.bs.modal', function (e) {
+            var splitId = e.relatedTarget.id.split('_');
+            var caOrWa = splitId[0];
+            var idx = splitId[2];
+
+            if (!(caOrWa + idx in drawn)) {
+                // Draw modal chart as a fully functional chart
+                var layout = {
+                    'width': $(window).width() - 58
+                };
+
+                var currentPlot = [];
+                if (caOrWa === 'ca') {
+                    currentPlot = [pl_ca_heatmaps[idx]];
+                } else if (caOrWa === 'wa') {
+                    currentPlot = [pl_wa_heatmaps[idx]];
+                }
+
+                var words = currentPlot[0].y;
+                currentPlot[0].text = words;
+
+                // Replace duplicate words with "unique" versions
+                currentPlot[0].y = createFakeUniqueWords(words);
+
+                // Hiding "x" values from tooltip here as they are all 0.
+                // This method below did not work for me.
+                // https://stackoverflow.com/questions/41128318/is-it-possible-to-change-text-in-hover-tool-tip-for-plotlyjs-bubble-chart
+                currentPlot[0].hoverinfo = 'x+y+z';
+
+                // Increase chart height for long sentences
+                if (words.length > 10) {
+                    layout.height = 700 + words.length * 10;
+                }
+                drawChart(caOrWa + '_modal_', idx, currentPlot, layout, false);
+                drawn[caOrWa + idx] = 1;
+            }
+        });
+    </script>
+{% endblock %}
+
+{% block content %}
+    <form action="" method="POST" class="top-buffer" id="pairForm">
+        {{ form.question(class="form-control d-none") }}
+        {{ form.correct_answers(class="form-control d-none") }}
+        {{ form.wrong_answers(class="form-control d-none") }}
+        <div class="row form-group">
+            <div class="col-sm-3"></div>
+            <div class="col-sm-6  text-center">
+                <div class="row">
+                    <h2 id="title" class="col-12 text-center">Result</h2>
+                </div>
+            </div>
+            <div class="col-sm-3"></div>
+        </div>
+
+        <div class="row">
+            <div class="col-sm-3  text-center">
+            </div>
+            <div class="col-sm-6">
+                <div class="form-group row">
+                    <div class="col-2"></div>
+                    <div class="col-8">
+                        {% for message in form.perplexity.errors %}
+                            <div class="row alert alert-danger">{{ message }}</div>
+                        {% endfor %}
+                        <div class="row">
+                            {{ form.perplexity.label(class="col-sm-6 col-form-label") }}
+                            <div class="col-sm-6">
+                                {{ form.perplexity(class="form-control", type="number", placeholder="Recommended: 5 to 50") }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-2"></div>
+                </div>
+                <div class="row margin-top-15">
+                    <div class="col-2"></div>
+                    <div class="col-8">
+                        {% for message in form.neuron.errors %}
+                            <div class="row alert alert-danger">{{ message }}</div>
+                        {% endfor %}
+                        <div class="row">
+                            <div class="col-sm-6 text-right">
+                                {{ form.neuron.label(class="col-sm-6 col-form-label") }}
+                            </div>
+                            <div class="col-sm-6">
+                                {{ form.neuron(class="form-control custom-select") }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-2"></div>
+                </div>
+                <div class="form-group row margin-top-10">
+                    <div class="col-2"></div>
+                    <div class="col-8">
+                        <div class="row">
+                            {{ form.scale.label(class="col-sm-6 col-form-label", title="Whether to scale neuron activations to [-1; 1] or not. Has no effect on the graph.") }}
+                            <div class="col-sm-1 padding-top-8">
+                                {{ form.scale }}
+                            </div>
+                            <div class="col-sm-5 text-right">
+                                {{ form.submit(class="btn btn-primary") }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-2"></div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="row margin-bottom-15">
+            <h3 class="col-12 text-center">{{ question }}</h3>
+        </div>
+
+        <div class="row">
+            <div class="col-sm-3 ">
+                <h3>Correct answers</h3>
+
+                {% for idx in range(highlighted_correct_answers|length) %}
+                    <div class="card mt-1">
+                        <div class="card-block">
+                            <p class="card-text">
+                                <b>CA{{ idx + 1 }}:</b>
+                                {{ highlighted_correct_answers[idx]|safe }}
+                            </p>
+                            <div class="card-footer">
+                                <div class="row">
+                                    <div class="col-8 text-left">
+                                        <span>
+                                            {% if scores_ca[loop.index0][0] > 0.5 %}
+                                                <i class="fa fa-check-circle correct-marked-correct"
+                                                   title="Correctly classified as a correct answer"></i>
+                                            {% else %}
+                                                <i class="fa fa-times-circle correct-marked-wrong"
+                                                   title="Incorrectly classified as a wrong answer"></i>
+                                            {% endif %}
+                                        </span>
+                                        <span class="text-muted">
+                                            {{ scores_ca[loop.index0][0]|round(2) }}
+                                        </span>
+                                    </div>
+                                    <div class="col-4 text-right">
+                                        <button type="button" class="btn btn-link btn-sm heatmap-btn"
+                                                data-toggle="modal"
+                                                data-target="#modal_ca_{{ idx }}"
+                                                id="ca_btn_{{ idx }}">
+                                            Heatmap
+                                        </button>
+                                    </div>
+
+                                    <!-- Modal -->
+                                    <div class="modal fade fullscreen" id="modal_ca_{{ idx }}" tabindex="-1"
+                                         role="dialog"
+                                         aria-labelledby="modal_ca_{{ idx }}_title" aria-hidden="true">
+                                        <div class="modal-dialog custom-class" role="document">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Neuron
+                                                        Activation
+                                                        Heatmap</h5>
+                                                    <button type="button" class="close" data-dismiss="modal"
+                                                            aria-label="Close">
+                                                        <span aria-hidden="true">&times;</span>
+                                                    </button>
+                                                </div>
+                                                <div class="modal-body text-center">
+                                                    <p class="lead">{{ correct_answers[idx] }}</p>
+                                                    <div class="pl_chart" id="ca_modal_{{ idx }}">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="col-sm-6  text-center">
+                <div class="row">
+                    <figure class="figure w-100">
+                        <div class="row" id="pl_tsne"></div>
+                        <figcaption class="figure-caption">
+                            t-SNE plot. Perplexity: {{ form.perplexity.data }}
+                            <br/>
+                            Values shown above are ground truths.
+                        </figcaption>
+                    </figure>
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <h3>Wrong answers</h3>
+
+                {% for idx in range(highlighted_wrong_answers|length) %}
+                    <div class="card mt-1">
+                        <div class="card-block">
+                            <p class="card-text">
+                                <b>WA{{ idx + 1 }}:</b>
+                                {{ highlighted_wrong_answers[idx]|safe }}
+                            </p>
+                            <div class="card-footer">
+                                <div class="row">
+                                    <div class="col-8 text-left">
+                                        <span>
+                                            {% if scores_wa[loop.index0][0] > 0.5 %}
+                                                <i class="fa fa-times-circle wrong-marked-wrong"
+                                                   title="Incorrectly classified as a correct answer"></i>
+                                            {% else %}
+                                                <i class="fa fa-check-circle wrong-marked-correct"
+                                                   title="Correctly classified as a wrong answer"></i>
+                                            {% endif %}
+                                        </span>
+                                        <span class="text-muted">
+                                            {{ scores_wa[loop.index0][0]|round(2) }}
+                                        </span>
+                                    </div>
+                                    <div class="col-4 text-right">
+                                        <button type="button" class="btn btn-link btn-sm heatmap-btn"
+                                                data-toggle="modal"
+                                                data-target="#modal_wa_{{ idx }}"
+                                                id="wa_btn_{{ idx }}">
+                                            Heatmap
+                                        </button>
+                                    </div>
+
+                                    <!-- Modal -->
+                                    <div class="modal fade fullscreen" id="modal_wa_{{ idx }}" tabindex="-1"
+                                         role="dialog"
+                                         aria-labelledby="modal_wa_{{ idx }}_title" aria-hidden="true">
+                                        <div class="modal-dialog custom-class" role="document">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Neuron
+                                                        Activation
+                                                        Heatmap</h5>
+                                                    <button type="button" class="close" data-dismiss="modal"
+                                                            aria-label="Close">
+                                                        <span aria-hidden="true">&times;</span>
+                                                    </button>
+                                                </div>
+                                                <div class="modal-body text-center">
+                                                    <p class="lead">{{ wrong_answers[idx] }}</p>
+                                                    <div class="pl_chart" id="wa_modal_{{ idx }}">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </form>
+{% endblock %}
