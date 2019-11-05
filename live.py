@@ -2,7 +2,7 @@ import json
 
 import requests
 from flask import (
-    Blueprint, render_template, request
+    Blueprint, render_template, request, current_app
 )
 from wtforms import Form, SubmitField, IntegerField, TextAreaField, validators, SelectField, BooleanField, ValidationError
 
@@ -39,7 +39,7 @@ def live_random():
     form = LiveForm()
     form.process()
 
-    url = ' http://127.0.0.1:5000/live/random'
+    url = current_app.config['REST_KERAS_URL'] + 'live/random'
     headers = {'content-type': 'application/json; charset=utf-8'}
     data = {
     }
@@ -72,7 +72,7 @@ def live():
             return render_template('live_input.html', form=form)
 
         if form.load.data:
-            url = ' http://127.0.0.1:5000/live/load'
+            url = current_app.config['REST_KERAS_URL'] + 'live/load'
             headers = {'content-type': 'application/json; charset=utf-8'}
             data = {
                 'pair_num': form.pair_num.data
@@ -101,7 +101,7 @@ def live():
         form.process()
         return render_template('live_input.html', form=form)
 
-    url = ' http://127.0.0.1:5000/live/'
+    url = current_app.config['REST_KERAS_URL'] + 'live'
     headers = {'content-type': 'application/json; charset=utf-8'}
     data = {
         'question': form.question.data,
